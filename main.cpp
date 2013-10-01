@@ -3,6 +3,7 @@
 #include <queue>
 #include "Tissue.h"
 #include "Simulation.h"
+
 using namespace std;
 
 // TODO: Handle malformed input
@@ -21,7 +22,7 @@ void dispatchLine(string textLineString) {
   } else {
     t = Tissue::TissueNew(strtok(NULL, " "));
     // Register tissue in simulation
-    return
+    return;
   }
 
   if (strcmp(type, "Tissue") == 0) {
@@ -29,7 +30,7 @@ void dispatchLine(string textLineString) {
   } else if (strcmp(token, "Cell") == 0) {
 
   }
-
+}
 /*
   The main takes in one input, the file name with the rules.
   The rules are then executed and the appropriate statistics are printed
@@ -42,6 +43,8 @@ int main(int argc, const char* argv[]) {
     cout << "error reading file" << endl;
     return 1;
   }
+
+  Simulation simulation;
 
   // Read data in, parse it, excute commands.
   string textLine;
