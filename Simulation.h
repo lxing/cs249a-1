@@ -14,12 +14,15 @@ class Simulation {
   Simulation();
   virtual ~Simulation();
 
-  const void AddTissue(Fwk::String _name);
-  const void AddCell(Cell::Coordinates _loc, Fwk::String tissue_name,
+  void TissueIs (const Fwk::String _name);
+  void CellIs (Cell::Coordinates _loc, Fwk::String tissue_name,
       Cell::CellType _type);
 
- private:
+ protected:
   vector< Fwk::Ptr<Tissue> > tissues_;
+
+ private:
+  std::vector<Fwk::Ptr<Tissue> >::iterator GetTissue(const Fwk::String _name);
 };
 
 #endif
