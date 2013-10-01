@@ -18,6 +18,11 @@ class Simulation {
   void CellIs (Cell::Coordinates _loc, Fwk::String tissue_name,
       Cell::CellType _type);
 
+  void InfectionIs(Cell::Coordinates _loc, CellMembrane::Side _side,
+                   int _strength);
+
+  void InfectedCellsDeleted(Fwk::String tissue_name);
+
  protected:
   vector< Fwk::Ptr<Tissue> > tissues_;
 

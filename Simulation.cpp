@@ -36,7 +36,8 @@ void Simulation::CellIs(Cell::Coordinates _loc, Fwk::String tissue_name,
   Fwk::Ptr<Cell> cell = Cell::CellNew(_loc, tissue.ptr(), _type);
 }
 
-std::vector<Fwk::Ptr<Tissue> >::iterator Simulation::GetTissue(const Fwk::String _name) {
+std::vector<Fwk::Ptr<Tissue> >::iterator Simulation::GetTissue(
+    const Fwk::String _name) {
   std::vector<Fwk::Ptr<Tissue> >::iterator it;
   for (it = tissues_.begin(); it != tissues_.end(); ++it) {
     Fwk::Ptr<Tissue> tissue = *it;
@@ -47,3 +48,15 @@ std::vector<Fwk::Ptr<Tissue> >::iterator Simulation::GetTissue(const Fwk::String
 
   return it;
 }
+
+void Simulation::InfectionIs(Cell::Coordinates _loc, CellMembrane::Side _side,
+                             int _strength) {
+  // TODO(rhau) fill in this method
+}
+
+void Simulation::InfectedCellsDeleted(Fwk::String tissue_name) {
+  // TODO(rhau) fill in this method
+}
+
+
+
