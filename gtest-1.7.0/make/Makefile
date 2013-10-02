@@ -73,8 +73,11 @@ gtest_main.a : gtest-all.o gtest_main.o
 # function.
 
 SimulationTest.o : $(USER_DIR)/SimulationTest.cpp \
-                     $(USER_DIR)/Simulation.h $(GTEST_HEADERS)
+                     $(USER_DIR)/Simulation.h $(USER_DIR)/Tissue.cpp \
+                     $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/SimulationTest.cpp
 
-SimulationTest : $(USER_DIR)/Simulation.o SimulationTest.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+SimulationTest : $(USER_DIR)/Simulation.o $(USER_DIR)/Tissue.o \
+		SimulationTest.o  $(USER_DIR)/fwk/BaseCollection.o \
+		$(USER_DIR)/fwk/BaseNotifiee.o $(USER_DIR)/fwk/Exception.o gtest_main.a
+		$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@

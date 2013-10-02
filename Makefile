@@ -10,6 +10,6 @@ asgn1:	$(OBJECTS) $(LIBS)
 clean:
 	rm -f asgn1 $(OBJECTS) $(LIBS) *~
 
-Simulation.o: Simulation.h
+Simulation.o: Simulation.cpp Simulation.h
 Tissue.o: Tissue.cpp Tissue.h
 main.o: main.cpp
