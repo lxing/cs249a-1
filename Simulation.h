@@ -15,19 +15,24 @@ class Simulation {
   virtual ~Simulation();
 
   void TissueIs (const Fwk::String _name);
-  void CellIs (Cell::Coordinates _loc, Fwk::String tissue_name,
-      Cell::CellType _type);
+  void CellIs (Fwk::String _tissueName, Cell::CellType _type,
+      Cell::Coordinates _loc);
+  void InfectionIs (Fwk::String _tissueName, Cell::Coordinates _loc,
+      CellMembrane::Side _side, AntibodyStrength _strength);
+  void InfectedCellsDel (Fwk::String _tissueName);
 
-  void InfectionIs(Cell::Coordinates _loc, CellMembrane::Side _side,
-                   int _strength);
+  void CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
+      CellMembrane::Side _side);
+  void CloneCells (Fwk::String _tissueName, CellMembrane::Side _side);
+  void AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
+      CellMembrane::Side _side, AntibodyStrength _strength);
 
-  void InfectedCellsDeleted(Fwk::String tissue_name);
 
  protected:
   vector< Fwk::Ptr<Tissue> > tissues_;
 
  private:
-  std::vector<Fwk::Ptr<Tissue> >::iterator GetTissue(const Fwk::String _name);
+  std::vector<Fwk::Ptr<Tissue> >::iterator GetTissue (const Fwk::String _name);
 };
 
 #endif
