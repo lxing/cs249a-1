@@ -33,6 +33,7 @@ class Simulation {
 
  private:
   std::vector<Fwk::Ptr<Tissue> >::iterator GetTissue (const Fwk::String _name);
+  void CheckTissue(const std::vector<Fwk::Ptr<Tissue> >::iterator it);
 };
 
 #endif

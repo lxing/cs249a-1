@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <fstream>
 #include <stdlib.h>
 #include "Simulation.h"
@@ -13,11 +14,7 @@ Simulation::~Simulation() {
 
 void Simulation::TissueIs (const Fwk::String _name) {
   std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_name);
-  if (it != tissues_.end()) {
-    // TODO(rhau) add some additional checks and validation
-    printf("Duplicate tissues: %s\n", _name.c_str());
-    return;
-  }
+  CheckTissue(it);
 
   Fwk::Ptr<Tissue> ptr(Tissue::TissueNew(_name));
   tissues_.push_back(ptr);
@@ -26,14 +23,12 @@ void Simulation::TissueIs (const Fwk::String _name) {
 void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type, 
                          Cell::Coordinates _loc) {
   std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_tissueName);
-  if (it != tissues_.end()) {
-    // TODO(rhau) add some additional checks and validation
-    printf("Tissue %s does not exist.\n", _tissueName.c_str());
-    return;
-  }
+  CheckTissue(it);
 
   Fwk::Ptr<Tissue> tissue = *it;
   Fwk::Ptr<Cell> cell = Cell::CellNew(_loc, tissue.ptr(), _type);
+  tissue->cellIs(cell);
+  assert(tissue->cells()==U32(1));
 }
 
 void Simulation::InfectionIs(Fwk::String tissueName_, Cell::Coordinates _loc,
@@ -42,7 +37,11 @@ void Simulation::InfectionIs(Fwk::String tissueName_, Cell::Coordinates _loc,
 }
 
 void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
-  // TODO(rhau) fill in this method
+  std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_tissueName);
+  CheckTissue(it);
+
+  Tissue::CellIteratorConst cell_iter = (*it)->cellIterConst();
+  // for (cell_)
 }
 
 
@@ -72,3 +71,12 @@ std::vector<Fwk::Ptr<Tissue> >::iterator Simulation::GetTissue(
   return it;
 }
 
+void Simulation::CheckTissue(
+    const std::vector<Fwk::Ptr<Tissue> >::iterator it) {
+  if (it == tissues_.end()) {
+    // TODO(rhau) add some additional checks and validation
+    printf("Tissue \'%s\' does not exist.\n", (*it)->name().c_str());
+    assert(it != tissues_.end());
+    return;
+  }
+}

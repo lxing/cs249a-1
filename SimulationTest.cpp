@@ -6,6 +6,7 @@
 
 #include <limits.h>
 #include "Simulation.h"
+#include "fwk/Types.h"
 #include "gtest/gtest.h"
 
 class SimulationTester : public Simulation{
@@ -25,6 +26,15 @@ TEST(SimulationTest, Simple) {
 
   vector< Fwk::Ptr<Tissue> >* tissues = simulation.GetTissues();
   assert(tissues->size() == 1);
+  assert(strcmp(tissues->at(0)->name().c_str(), "TestTissue")==0);
+
+  Cell::Coordinates coord;
+  coord.x = 0;
+  coord.y = 0;
+  coord.z = 0;
+  simulation.CellIs("TestTissue", Cell::tCell_, coord);
+  printf("%d\n", tissues->at(0)->cells());
+  assert(tissues->at(0)->cells()==U32(1));
 }
 
 // Step 3. Call RUN_ALL_TESTS() in main().
