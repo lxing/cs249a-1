@@ -14,20 +14,20 @@ Simulation::~Simulation() {
 }
 
 void Simulation::TissueIs (const Fwk::String _name) {
-  std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_name);
+  std::vector<Tissue::Ptr>::iterator it = GetTissue(_name);
   if ((*it)) return;
 
-  Fwk::Ptr<Tissue> ptr(Tissue::TissueNew(_name));
+  Tissue::Ptr ptr(Tissue::TissueNew(_name));
   tissues_.push_back(ptr);
 }
 
 void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type, 
                          Cell::Coordinates _loc) {
-  std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_tissueName);
+  std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
   CheckTissue(it);
 
-  Fwk::Ptr<Tissue> tissue = *it;
-  Fwk::Ptr<Cell> cell = Cell::CellNew(_loc, tissue.ptr(), _type);
+  Tissue::Ptr tissue = *it;
+  Cell::Ptr cell = Cell::CellNew(_loc, tissue.ptr(), _type);
   tissue->cellIs(cell);
   assert(tissue->cells()==U32(1));
 }
@@ -48,7 +48,7 @@ void Simulation::InfectionIs(Fwk::String tissueName_, Cell::Coordinates _loc,
 }
 
 void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
-  std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_tissueName);
+  std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
   CheckTissue(it);
 
   // TODO(lxing) fwkHmNext instead of raw iterator
@@ -69,7 +69,7 @@ void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) 
 
 void Simulation::AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
                                      CellMembrane::Side _side, AntibodyStrength _strength) {
-  std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_tissueName);
+  std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
   CheckTissue(it);
 
   Cell::Ptr cell = (*it)->cell(_loc);
@@ -77,11 +77,11 @@ void Simulation::AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates 
   membrane->antibodyStrengthIs(_strength);
 }
 
-std::vector<Fwk::Ptr<Tissue> >::iterator Simulation::GetTissue(
+std::vector<Tissue::Ptr>::iterator Simulation::GetTissue(
     const Fwk::String _name) {
-  std::vector<Fwk::Ptr<Tissue> >::iterator it;
+  std::vector<Tissue::Ptr>::iterator it;
   for (it = tissues_.begin(); it != tissues_.end(); ++it) {
-    Fwk::Ptr<Tissue> tissue = *it;
+    Tissue::Ptr tissue = *it;
     if (strcmp(tissue->name().c_str(), _name.c_str()) == 0) {
       break;
     }
@@ -90,7 +90,7 @@ std::vector<Fwk::Ptr<Tissue> >::iterator Simulation::GetTissue(
 }
 
 void Simulation::CheckTissue(
-    const std::vector<Fwk::Ptr<Tissue> >::iterator it) {
+    const std::vector<Tissue::Ptr>::iterator it) {
   if (it == tissues_.end()) {
     // TODO(rhau) add some additional checks and validation
     printf("Tissue \'%s\' does not exist.\n", (*it)->name().c_str());

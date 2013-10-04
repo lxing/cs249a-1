@@ -13,7 +13,7 @@ class SimulationTester : public Simulation{
  public:
   SimulationTester() : Simulation() {}
 
-  vector< Fwk::Ptr<Tissue> >* GetTissues() {
+  vector<Tissue::Ptr>* GetTissues() {
     return &tissues_;
   }
 };
@@ -24,7 +24,7 @@ TEST(SimulationTest, Simple) {
   SimulationTester simulation;
   simulation.TissueIs("TestTissue");
 
-  vector< Fwk::Ptr<Tissue> >* tissues = simulation.GetTissues();
+  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
   assert(tissues->size() == 1);
   assert(strcmp(tissues->at(0)->name().c_str(), "TestTissue")==0);
 
@@ -41,7 +41,7 @@ TEST(SimulationTest, Delete) {
   SimulationTester simulation;
   simulation.TissueIs("TestTissue");
 
-  vector< Fwk::Ptr<Tissue> >* tissues = simulation.GetTissues();
+  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
   assert(tissues->size() == 1);
   assert(strcmp(tissues->at(0)->name().c_str(), "TestTissue")==0);
 

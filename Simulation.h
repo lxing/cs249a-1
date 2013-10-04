@@ -29,13 +29,13 @@ class Simulation {
 
 
  protected:
-  vector< Fwk::Ptr<Tissue> > tissues_;
+  vector<Tissue::Ptr> tissues_;
 
  private:
   void InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
       AntibodyStrength _strength);
-  std::vector<Fwk::Ptr<Tissue> >::iterator GetTissue (const Fwk::String _name);
-  void CheckTissue (const std::vector<Fwk::Ptr<Tissue> >::iterator it);
+  std::vector<Tissue::Ptr>::iterator GetTissue (const Fwk::String _name);
+  void CheckTissue (const std::vector<Tissue::Ptr>::iterator it);
 };
 
 class SimulationCount {
