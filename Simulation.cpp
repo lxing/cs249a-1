@@ -33,17 +33,30 @@ void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type,
 }
 
 
-void Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
+bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
                                 AntibodyStrength _strength) {
-  if (_cell->health() == _cell->infected()) return;
+  if (_cell->health() == _cell->infected()) return false;
+  CellMembrane::Ptr membrane = _cell->membrane(_side);
+  if (_strength <= membrane->antibodyStrength()) return false; 
+  _cell->healthIs(_cell->infected());
+  return true;
 }
 
-void Simulation::InfectionIs(Fwk::String tissueName_, Cell::Coordinates _loc,
+void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
                              CellMembrane::Side _side, AntibodyStrength _strength) {
   std::queue<Cell::Ptr> infectionFringe;
-  
+  std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
+  CheckTissue(it);
+  Tissue::Ptr tissue = (*it);
+
+  Cell::Ptr cell = tissue->cell(_loc);
+  if (!InfectedCellIs(cell, _side, _strength)) return;
+  infectionFringe.push(cell);
+
   while (!infectionFringe.empty()) {
-     
+    cell = infectionFringe.front(); 
+
+    infectionFringe.pop();
   }
 }
 
