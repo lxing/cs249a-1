@@ -15,8 +15,7 @@ Cell::Coordinates parseLocation() {
 }
 
 AntibodyStrength parseStrength() {
-  AntibodyStrength strength;
-  strength.valueIs(atoi(strtok(NULL, " ")));
+  AntibodyStrength strength(atoi(strtok(NULL, " ")));
   return strength;
 }
 
