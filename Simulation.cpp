@@ -13,6 +13,8 @@ Simulation::~Simulation() {
 }
 
 void Simulation::TissueIs (const Fwk::String _name) {
+  std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_name);
+  if (it != NULL) return;
   Fwk::Ptr<Tissue> ptr(Tissue::TissueNew(_name));
   tissues_.push_back(ptr);
 }
@@ -37,6 +39,7 @@ void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
   std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_tissueName);
   CheckTissue(it);
 
+  // TODO(lxing) fwkHmNext instead of raw iterator
   Tissue::CellIteratorConst cell_iter = (*it)->cellIterConst();
   for ( ; cell_iter != NULL; ++cell_iter) {
     (*it)->cellDel((*cell_iter)->location().name());
@@ -63,7 +66,12 @@ void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) 
 
 void Simulation::AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
                                      CellMembrane::Side _side, AntibodyStrength _strength) {
-  // TODO(lxing) fill in this method
+  std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_tissueName);
+  CheckTissue(it);
+
+  Cell::Ptr cell = (*it)->cell(_loc);
+  CellMembrane::Ptr membrane = cell->membrane(_side);
+  membrane->antibodyStrengthIs(_strength);
 }
 
 std::vector<Fwk::Ptr<Tissue> >::iterator Simulation::GetTissue(
