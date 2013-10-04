@@ -14,7 +14,7 @@ Simulation::~Simulation() {
 
 void Simulation::TissueIs (const Fwk::String _name) {
   std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_name);
-  if (it != NULL) return;
+  if ((*it)) return;
 
   Fwk::Ptr<Tissue> ptr(Tissue::TissueNew(_name));
   tissues_.push_back(ptr);
@@ -33,7 +33,7 @@ void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type,
 
 void Simulation::InfectionIs(Fwk::String tissueName_, Cell::Coordinates _loc,
                              CellMembrane::Side _side, AntibodyStrength _strength) {
-  // TODO(rhau) fill in this method
+  
 }
 
 void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
