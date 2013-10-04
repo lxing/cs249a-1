@@ -41,7 +41,9 @@ void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
   CheckTissue(it);
 
   Tissue::CellIteratorConst cell_iter = (*it)->cellIterConst();
-  // for (cell_)
+  for ( ; cell_iter != NULL; ++cell_iter) {
+    (*it)->cellDel((*cell_iter)->location().name());
+  }
 }
 
 
