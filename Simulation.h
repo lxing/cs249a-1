@@ -32,6 +32,8 @@ class Simulation {
   vector< Fwk::Ptr<Tissue> > tissues_;
 
  private:
+  void InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
+      AntibodyStrength _strength);
   std::vector<Fwk::Ptr<Tissue> >::iterator GetTissue (const Fwk::String _name);
   void CheckTissue (const std::vector<Fwk::Ptr<Tissue> >::iterator it);
 };

@@ -1,6 +1,7 @@
 
 #include <assert.h>
 #include <fstream>
+#include <queue>
 #include <stdlib.h>
 #include "Simulation.h"
 
@@ -31,9 +32,19 @@ void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type,
   assert(tissue->cells()==U32(1));
 }
 
+
+void Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
+                                AntibodyStrength _strength) {
+  if (_cell->health() == _cell->infected()) return;
+}
+
 void Simulation::InfectionIs(Fwk::String tissueName_, Cell::Coordinates _loc,
                              CellMembrane::Side _side, AntibodyStrength _strength) {
+  std::queue<Cell::Ptr> infectionFringe;
   
+  while (!infectionFringe.empty()) {
+     
+  }
 }
 
 void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
