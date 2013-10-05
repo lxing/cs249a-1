@@ -15,7 +15,7 @@ Simulation::~Simulation() {
 
 void Simulation::TissueIs (const Fwk::String _name) {
   std::vector<Tissue::Ptr>::iterator it = GetTissue(_name);
-  if ((*it)) return;
+  if (it != tissues_.end()) return;
 
   Tissue::Ptr ptr(Tissue::TissueNew(_name));
   tissues_.push_back(ptr);
