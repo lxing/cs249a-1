@@ -9,6 +9,8 @@
 #include "fwk/Types.h"
 #include "gtest/gtest.h"
 
+#define kTestTissueName "TestTissue"
+
 class SimulationTester : public Simulation{
  public:
   SimulationTester() : Simulation() {}
@@ -18,41 +20,75 @@ class SimulationTester : public Simulation{
   }
 };
 
-
-// Tests factorial of negative numbers.
-TEST(SimulationTest, Simple) {
-  SimulationTester simulation;
-  simulation.TissueIs("TestTissue");
+void SimulationTestSetup(SimulationTester& simulation) {
+  simulation.TissueIs(kTestTissueName);
 
   vector<Tissue::Ptr>* tissues = simulation.GetTissues();
   assert(tissues->size() == 1);
-  assert(strcmp(tissues->at(0)->name().c_str(), "TestTissue")==0);
+  assert(strcmp(tissues->at(0)->name().c_str(), kTestTissueName)==0);
 
   Cell::Coordinates coord;
   coord.x = 0;
   coord.y = 0;
   coord.z = 0;
-  simulation.CellIs("TestTissue", Cell::tCell_, coord);
+  simulation.CellIs(kTestTissueName, Cell::tCell_, coord);
+}
+
+// Tests factorial of negative numbers.
+TEST(SimulationTest, Simple) {
+  SimulationTester simulation;
+  SimulationTestSetup(simulation);
+  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
+
   printf("%d\n", tissues->at(0)->cells());
+  // Tests to see if a cell was indeed created
   assert(tissues->at(0)->cells()==U32(1));
 }
 
 TEST(SimulationTest, Delete) {
   SimulationTester simulation;
-  simulation.TissueIs("TestTissue");
-
+  SimulationTestSetup(simulation);
   vector<Tissue::Ptr>* tissues = simulation.GetTissues();
-  assert(tissues->size() == 1);
-  assert(strcmp(tissues->at(0)->name().c_str(), "TestTissue")==0);
 
   Cell::Coordinates coord;
   coord.x = 0;
   coord.y = 0;
   coord.z = 0;
-  simulation.CellIs("TestTissue", Cell::tCell_, coord);
-
   Cell::Ptr cell = tissues->at(0)->cell(coord);
   cell->healthIs(Cell::infected_);
-  simulation.InfectedCellsDel("TestTissue");
+  simulation.InfectedCellsDel(kTestTissueName);
+  // Tests to see if the infected cell was deleted
   assert(tissues->at(0)->cells()==U32(0));
+}
+
+TEST(SimulationTest, Clone) {
+  SimulationTester simulation;
+  SimulationTestSetup(simulation);
+  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
+  assert(tissues->at(0)->cells() == U32(1));
+
+  Cell::Coordinates coord;
+  coord.x = 0;
+  coord.y = 0;
+  coord.z = 0;
+  simulation.CloneCell(kTestTissueName, coord, CellMembrane::east_);
+  // Tests to see that a cell was cloned
+  assert(tissues->at(0)->cells() == U32(2));
+}
+
+TEST(SimulationTest, CloneMultiple) {
+  SimulationTester simulation;
+  SimulationTestSetup(simulation);
+  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
+
+  Cell::Coordinates coord;
+  coord.x = 0;
+  coord.y = 0;
+  coord.z = 0;
+  simulation.CloneCell(kTestTissueName, coord, CellMembrane::east_);
+  assert(tissues->at(0)->cells() == U32(2));
+
+  // Tests to see that two cells were cloned
+  simulation.CloneCells(kTestTissueName, CellMembrane::north_);
+  assert(tissues->at(0)->cells() == U32(4));
 }

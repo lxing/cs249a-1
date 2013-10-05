@@ -28,8 +28,7 @@ void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type,
 
   Tissue::Ptr tissue = *it;
   Cell::Ptr cell = Cell::CellNew(_loc, tissue.ptr(), _type);
-  tissue->cellIs(cell);
-  assert(tissue->cells()==U32(1));
+  tissue->cellIs(cell); //TODO(rhau) throw exception if this fails
 }
 
 
@@ -78,15 +77,39 @@ void Simulation::CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
   CheckTissue(it);
 
   Cell::PtrConst cell = (*it)->cell(_loc);
-  // TODO(rhau) CheckCell();
+  if (!cell) {
+    // TODO(rhau) throw exception;
+    printf("Cell to clone is null.\n");
+    return;
+  }
+
   Cell::Coordinates clone_loc = GetCloneLocation(_loc, _side);
-  // TODO(rhau) CheckLoc();
+  Cell::PtrConst existing_cell = (*it)->cell(clone_loc);
+  if (existing_cell) {
+    // TODO(rhau) throw exception;
+    printf("Cell already exists in clone location.\n");
+    return; 
+  }
 
   CellIs((*it)->name(), cell->cellType(), clone_loc);
 }
 
 void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) {
-  // TODO(lxing) fill in this method
+  std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
+  CheckTissue(it);
+
+  // TODO(lxing) fwkHmNext instead of raw iterator
+  vector<Cell::Coordinates> clone_locations;
+  Tissue::CellIteratorConst cell_iter = (*it)->cellIterConst();
+  for (; cell_iter != NULL; ++cell_iter) {
+    clone_locations.push_back((*cell_iter)->location());
+  }
+
+  int i;
+  for (; i<clone_locations.size(); i++) {
+    Cell::Coordinates coord = clone_locations[i];
+    CloneCell(_tissueName, coord, _side);        
+  }
 }
 
 void Simulation::AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
@@ -95,6 +118,7 @@ void Simulation::AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates 
   CheckTissue(it);
 
   Cell::Ptr cell = (*it)->cell(_loc);
+  // TODO(rhau) verify that cell exists
   CellMembrane::Ptr membrane = cell->membrane(_side);
   membrane->antibodyStrengthIs(_strength);
 }
@@ -116,6 +140,7 @@ void Simulation::CheckTissue(
   if (it == tissues_.end()) {
     // TODO(rhau) add some additional checks and validation
     printf("Tissue did not exist.\n");
+    // TODO(rhau) change the asserts to throw exceptions instead
     assert(it != tissues_.end());
     return;
   }
