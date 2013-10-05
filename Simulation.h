@@ -29,11 +29,13 @@ class Simulation {
 
 
  protected:
-  vector< Fwk::Ptr<Tissue> > tissues_;
+  vector<Tissue::Ptr> tissues_;
 
  private:
-  std::vector<Fwk::Ptr<Tissue> >::iterator GetTissue (const Fwk::String _name);
-  void CheckTissue(const std::vector<Fwk::Ptr<Tissue> >::iterator it);
+  bool InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
+      AntibodyStrength _strength);
+  std::vector<Tissue::Ptr>::iterator GetTissue (const Fwk::String _name);
+  void CheckTissue (const std::vector<Tissue::Ptr>::iterator it);
   Cell::Coordinates GetCloneLocation(Cell::Coordinates _loc, CellMembrane::Side _side);
 };
 
