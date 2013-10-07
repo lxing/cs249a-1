@@ -30,7 +30,7 @@ CXXFLAGS += -g -Wall -Wextra -pthread -Wno-missing-field-initializers
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = SimulationTest
+TESTS = Test 
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -72,12 +72,13 @@ gtest_main.a : gtest-all.o gtest_main.o
 # gtest_main.a, depending on whether it defines its own main()
 # function.
 
-SimulationTest.o : $(USER_DIR)/SimulationTest.cpp \
-                     $(USER_DIR)/Simulation.h $(USER_DIR)/Tissue.cpp \
-                     $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/SimulationTest.cpp
+Test.o : $(USER_DIR)/Test.cpp \
+         $(USER_DIR)/Simulation.h \
+         $(USER_DIR)/Tissue.cpp \
+         $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/Test.cpp
 
-SimulationTest : $(USER_DIR)/Simulation.o $(USER_DIR)/Tissue.o \
-		SimulationTest.o  $(USER_DIR)/fwk/BaseCollection.o \
+Test : $(USER_DIR)/Simulation.o $(USER_DIR)/Tissue.o \
+		Test.o  $(USER_DIR)/fwk/BaseCollection.o \
 		$(USER_DIR)/fwk/BaseNotifiee.o $(USER_DIR)/fwk/Exception.o gtest_main.a
 		$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@

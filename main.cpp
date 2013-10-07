@@ -1,8 +1,8 @@
 #include <fstream>
+#include <stdexcept>
 #include <stdlib.h>
-#include <queue>
-#include "Tissue.h"
 #include "Simulation.h"
+#include "Tissue.h"
 
 using namespace std;
 
@@ -27,7 +27,7 @@ CellMembrane::Side parseSide() {
   if (strcmp(sideString, "west") == 0) return CellMembrane::west_;
   if (strcmp(sideString, "up") == 0) return CellMembrane::up_;
   if (strcmp(sideString, "down") == 0) return CellMembrane::down_;
-  throw "Invalid side";
+  throw std::runtime_error("Invalid side");
 }
 
 // TODO: Handle malformed input
@@ -49,7 +49,7 @@ void dispatchLine(const string textLineString, Simulation simulation) {
     char *action = strtok(NULL, " ");
 
     if (strcmp(action, "infectedCellsDel") == 0) {
-      simulation.InfectedCellsDel(tissueName);
+      simulation.InfectionDel(tissueName);
       return;
     }
 
@@ -60,8 +60,9 @@ void dispatchLine(const string textLineString, Simulation simulation) {
 
     Cell::Coordinates location = parseLocation();
 
-    if (strcmp(action, "infectedStartLocationIs") == 0) {
-      simulation.InfectionIs(tissueName, location, parseSide(), parseStrength());
+    if (strcmp(action, "infectionStartLocationIs") == 0) {
+      CellMembrane::Side side = parseSide();
+      simulation.InfectionIs(tissueName, location, side, parseStrength());
       return;
     }
 
@@ -71,7 +72,7 @@ void dispatchLine(const string textLineString, Simulation simulation) {
     } else if (strcmp(action, "helperCellNew") == 0) {
       cellType = Cell::helperCell_; 
     } else {
-      throw "Invalid action";
+      throw std::runtime_error("Invalid action");
     }
     simulation.CellIs(tissueName, cellType, location);
   } else if (strcmp(type, "Cell") == 0) {
@@ -86,7 +87,7 @@ void dispatchLine(const string textLineString, Simulation simulation) {
       strtok(NULL, " "); // Skip the superfluous "antibodyStrengthIs" directive
       simulation.AntibodyStrengthIs(tissueName, location, side, parseStrength());
     } else {
-      throw "Invalid action";
+      throw std::runtime_error("Invalid action");
     }
   }
 }

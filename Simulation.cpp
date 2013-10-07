@@ -1,184 +1,113 @@
-
 #include <assert.h>
-#include <fstream>
-#include <queue>
+#include <stdexcept>
 #include <stdlib.h>
 #include "Simulation.h"
 
-void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
-  for (int i=0; i<6; i++) {
-    CellMembrane::Side side = static_cast<CellMembrane::Side>(i);
-    AntibodyStrength strength(0);
-    if (_cell->cellType() == Cell::cytotoxicCell_) {
+Simulation::Simulation() {}
+Simulation::~Simulation() {}
 
-    } else if (_cell->cellType() == Cell::helperCell_) {
-
-    } else {
-      // TODO(rhau) throw exception if not one of those cell types
-    }
-
-    _cell->membrane(side)->antibodyStrengthIs(strength); // update strength
-  }
-}
-
-Simulation::Simulation() {
-  // TODO(rhau) fill in
-}
-
-Simulation::~Simulation() {
-  // TODO(rhau) fill in
-}
-
-void Simulation::TissueIs (const Fwk::String _name) {
-  std::vector<Tissue::Ptr>::iterator it = GetTissue(_name);
-  if (it != tissues_.end()) return;
-
-  Tissue::Ptr ptr(Tissue::TissueNew(_name));
-  tissues_.push_back(ptr);
+void Simulation::TissueIs(Fwk::String _tissueName) {
+  Tissue::Ptr tissue = GetTissue(_tissueName);
+  if (tissue.ptr()) return;
+  cout << _tissueName;
+  Tissue::Ptr tissueNew(Tissue::TissueNew(_tissueName));   
+  tissues_.push_back(tissueNew); 
 }
 
 void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type, 
                          Cell::Coordinates _loc) {
-  std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
-  CheckTissue(it);
-
-  Tissue::Ptr tissue = *it;
+  Tissue::Ptr tissue = GetTissue(_tissueName);
+  if (!tissue.ptr()) return;
+  Cell::PtrConst existing = tissue->cell(_loc);
+  if (existing.ptr()) throw std::runtime_error("Cell Overwrite");
   Cell::Ptr cell = Cell::CellNew(_loc, tissue.ptr(), _type);
-  tissue->cellIs(cell); //TODO(rhau) throw exception if this fails
+  tissue->cellIs(cell);
 }
-
 
 bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
                                 AntibodyStrength _strength) {
-  if (_cell->health() == _cell->infected()) return false;
-  CellMembrane::Ptr membrane = _cell->membrane(_side);
-  if (_strength <= membrane->antibodyStrength()) return false; 
-  _cell->healthIs(_cell->infected());
   return true;
 }
 
+
 void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
                              CellMembrane::Side _side, AntibodyStrength _strength) {
-  std::queue<Cell::Ptr> infectionFringe;
-  std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
-  CheckTissue(it);
-  Tissue::Ptr tissue = (*it);
+}
 
-  Cell::Ptr cell = tissue->cell(_loc);
-  if (!InfectedCellIs(cell, _side, _strength)) return;
-  infectionFringe.push(cell);
+void Simulation::InfectionDel(Fwk::String _tissueName) {
+  Tissue::Ptr tissue = GetTissue(_tissueName);
+  if (!tissue.ptr()) return;
 
-  while (!infectionFringe.empty()) {
-    cell = infectionFringe.front(); 
-
-    infectionFringe.pop();
+  vector<Cell::Coordinates> infectedLocs;
+  for (Tissue::CellIteratorConst it = tissue->cellIterConst(); it; ++it) {
+    if ((*it)->healthIs(Cell::infected())) {
+      tissue->cellDel((*it)->location().name());
+    }
   }
 }
 
-void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
-  std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
-  CheckTissue(it);
+void Simulation::CloneCell(Fwk::String _tissueName, Cell::Coordinates _loc,
+                           CellMembrane::Side _side) {
+  Tissue::Ptr tissue = GetTissue(_tissueName);
+  if (!tissue.ptr()) return;
+  Cell::PtrConst cell = tissue->cell(_loc);
+  if (!cell.ptr()) return;
 
-  // TODO(lxing) fwkHmNext instead of raw iterator
-  Tissue::CellIteratorConst cell_iter = (*it)->cellIterConst();
-  for ( ; cell_iter != NULL; ++cell_iter) {
-    (*it)->cellDel((*cell_iter)->location().name());
-  }
-}
+  Cell::Coordinates newLoc = LocationMove(_loc, _side);
+  CellIs(_tissueName, cell->cellType(), newLoc);
 
-
-void Simulation::CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
-                            CellMembrane::Side _side) {
-  std::vector<Fwk::Ptr<Tissue> >::iterator it = GetTissue(_tissueName);
-  CheckTissue(it);
-
-  Cell::PtrConst cell = (*it)->cell(_loc);
-  if (!cell) {
-    // TODO(rhau) throw exception;
-    printf("Cell to clone is null.\n");
-    return;
-  }
-
-  Cell::Coordinates clone_loc = GetCloneLocation(_loc, _side);
-  Cell::PtrConst existing_cell = (*it)->cell(clone_loc);
-  if (existing_cell) {
-    // TODO(rhau) throw exception;
-    printf("Cell already exists in clone location.\n");
-    return; 
-  }
-
-  CellIs((*it)->name(), cell->cellType(), clone_loc);
+  // TODO: Copy antibody strengths
 }
 
 void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) {
-  std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
-  CheckTissue(it);
+  Tissue::Ptr tissue = GetTissue(_tissueName);
+  if (!tissue.ptr()) return;
 
-  // TODO(lxing) fwkHmNext instead of raw iterator
-  vector<Cell::Coordinates> clone_locations;
-  Tissue::CellIteratorConst cell_iter = (*it)->cellIterConst();
-  for (; cell_iter != NULL; ++cell_iter) {
-    clone_locations.push_back((*cell_iter)->location());
+  vector<Cell::Coordinates> cloneLocs;
+  for (Tissue::CellIteratorConst it = tissue->cellIterConst(); it; ++it) {
+    cloneLocs.push_back((*it)->location());
   }
 
-  int i;
-  for (; i<clone_locations.size(); i++) {
-    Cell::Coordinates coord = clone_locations[i];
-    CloneCell(_tissueName, coord, _side);        
+  for (U8 i = 0; i < cloneLocs.size(); ++i) {
+    try {
+      CloneCell(_tissueName, cloneLocs[i], _side);
+    } catch (...) {
+      // No-op, just continue cloning
+    }
   }
 }
 
 void Simulation::AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
                                      CellMembrane::Side _side, AntibodyStrength _strength) {
-  std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
-  CheckTissue(it);
-
-  Cell::Ptr cell = (*it)->cell(_loc);
-  // TODO(rhau) verify that cell exists
+  Tissue::Ptr tissue = GetTissue(_tissueName);
+  if (!tissue.ptr()) return;
+  Cell::Ptr cell = tissue->cell(_loc);
+  if (!cell.ptr()) return;
   CellMembrane::Ptr membrane = cell->membrane(_side);
-  membrane->antibodyStrengthIs(_strength);
+  if (!membrane.ptr()) return;
+  membrane->antibodyStrengthIs(_strength); 
 }
 
-std::vector<Tissue::Ptr>::iterator Simulation::GetTissue(
-    const Fwk::String _name) {
-  std::vector<Tissue::Ptr>::iterator it;
-  for (it = tissues_.begin(); it != tissues_.end(); ++it) {
-    Tissue::Ptr tissue = *it;
-    if (strcmp(tissue->name().c_str(), _name.c_str()) == 0) {
-      break;
+Tissue::Ptr Simulation::GetTissue(Fwk::String _tissueName) {
+  Tissue::Ptr tissue;
+  for (std::vector<Tissue::Ptr>::iterator it = tissues_.begin(); it != tissues_.end(); ++it) {
+    tissue = *it;
+    if (!strcmp(tissue->name().c_str(), _tissueName.c_str())) {
+      return tissue;
     }
   }
-  return it;
+  return tissue;
 }
 
-void Simulation::CheckTissue(
-    const std::vector<Tissue::Ptr>::iterator it) {
-  if (it == tissues_.end()) {
-    // TODO(rhau) add some additional checks and validation
-    printf("Tissue did not exist.\n");
-    // TODO(rhau) change the asserts to throw exceptions instead
-    assert(it != tissues_.end());
-    return;
+Cell::Coordinates Simulation::LocationMove(Cell::Coordinates _loc, CellMembrane::Side _side) {
+  Cell::Coordinates newLoc = _loc;
+  switch (_side) {
+    case CellMembrane::north_ : newLoc.y += 1;
+    case CellMembrane::south_: newLoc.y -= 1;
+    case CellMembrane::east_: newLoc.x += 1;
+    case CellMembrane::west_: newLoc.x -= 1;
+    case CellMembrane::up_: newLoc.z += 1;
+    case CellMembrane::down_: newLoc.z -= 1;
   }
-}
-
-Cell::Coordinates Simulation::GetCloneLocation(Cell::Coordinates _loc, CellMembrane::Side _side) {
-  Cell::Coordinates clone_loc = _loc;
-  if (_side == CellMembrane::north_) {
-    clone_loc.y += 1;
-  } else if (_side == CellMembrane::south_) {
-    clone_loc.y -= 1;
-  } else if (_side == CellMembrane::east_) {
-    clone_loc.x += 1;
-  } else if (_side == CellMembrane::west_) {
-    clone_loc.x -= 1;
-  } else if (_side == CellMembrane::up_) {
-    clone_loc.z += 1;
-  } else if (_side == CellMembrane::down_) {
-    clone_loc.z -= 1;
-  } else {
-    // TODO(rhau) throw exceptioin
-  }
-
-  return clone_loc;
+  return newLoc;
 }
