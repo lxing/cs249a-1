@@ -92,3 +92,20 @@ TEST(SimulationTest, CloneMultiple) {
   simulation.CloneCells(kTestTissueName, CellMembrane::north_);
   assert(tissues->at(0)->cells() == U32(4));
 }
+
+TEST(SimulationTest, AntibodyStrength) {
+  SimulationTester simulation;
+  SimulationTestSetup(simulation);
+  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
+
+  Cell::Coordinates coord;
+  coord.x = 0;
+  coord.y = 0;
+  coord.z = 0;
+  Cell::Ptr cell = tissues->at(0)->cell(coord);
+
+  simulation.AntibodyStrengthIs(kTestTissueName, coord, CellMembrane::north_, 0);
+  AntibodyStrength expected_strength(0);
+  assert(expected_strength ==
+      cell->membrane(CellMembrane::north_)->antibodyStrength());
+}
