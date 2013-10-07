@@ -93,6 +93,22 @@ TEST(SimulationTest, CloneMultiple) {
   assert(tissues->at(0)->cells() == U32(4));
 }
 
+TEST(SimulationTest, Infection) {
+  SimulationTester simulation;
+  SimulationTestSetup(simulation);
+  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
+
+  Cell::Coordinates coord;
+  coord.x = 0;
+  coord.y = 0;
+  coord.z = 0;
+  AntibodyStrength strength(100);
+  simulation.InfectionIs(kTestTissueName, coord, CellMembrane::north_, strength);
+
+  Cell::Ptr cell = tissues->at(0)->cell(coord);
+  assert(Cell::infected_ == cell->health());
+}
+
 TEST(SimulationTest, AntibodyStrength) {
   SimulationTester simulation;
   SimulationTestSetup(simulation);
