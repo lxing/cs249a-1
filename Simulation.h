@@ -14,6 +14,10 @@ class Simulation {
   Simulation();
   virtual ~Simulation();
 
+  class TissueReactor : public Tissue::Notifiee {
+    void onCellNew(Cell::Ptr _cell);
+  };
+
   void TissueIs (const Fwk::String _name);
   void CellIs (Fwk::String _tissueName, Cell::CellType _type,
       Cell::Coordinates _loc);

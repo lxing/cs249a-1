@@ -5,6 +5,22 @@
 #include <stdlib.h>
 #include "Simulation.h"
 
+void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
+  for (int i=0; i<6; i++) {
+    CellMembrane::Side side = static_cast<CellMembrane::Side>(i);
+    AntibodyStrength strength(0);
+    if (_cell->cellType() == Cell::cytotoxicCell_) {
+
+    } else if (_cell->cellType() == Cell::helperCell_) {
+
+    } else {
+      // TODO(rhau) throw exception if not one of those cell types
+    }
+
+    _cell->membrane(side)->antibodyStrengthIs(strength); // update strength
+  }
+}
+
 Simulation::Simulation() {
   // TODO(rhau) fill in
 }
