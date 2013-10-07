@@ -48,9 +48,6 @@ class SimulationCount {
   U8 value() const { return value_; }
   void valueIs(U8 _value) { value_ = _value; }
   void valueInc(U8 _inc) { value_ += _inc; }
-  SimulationCount(U8 _value=0): value_(_value) {
-    if (_value < 0) throw Fwk::RangeException("value=range()");
-  }
  protected:
   U8 value_;
 };

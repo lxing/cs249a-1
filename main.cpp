@@ -1,4 +1,7 @@
+#include <iostream>
 #include <fstream>
+#include <sstream>
+#include <string>
 #include <stdlib.h>
 #include <queue>
 #include "Tissue.h"
@@ -6,92 +9,106 @@
 
 using namespace std;
 
-Cell::Coordinates parseLocation() {
-  Cell::Coordinates location;
-  location.x = atoi(strtok(NULL, " "));
-  location.y = atoi(strtok(NULL, " "));
-  location.z = atoi(strtok(NULL, " "));
-  return location;
-}
 
-AntibodyStrength parseStrength() {
-  AntibodyStrength strength(atoi(strtok(NULL, " ")));
-  return strength;
-}
+private bool extractLocation(std::istringstream iss, Cell::Coordinates _loc) {
+  string x,y,z;
+  if (!getline(iss, x, ' ')) return false;
+  if (!getline(iss, y, ' ')) return false;
+  if (!getline(iss, z, ' ')) return false;
+  _loc.x = atoi(x[0]);
+  _loc.y = atoi(y[0]);
+  _loc.z = atoi(z[0]);
+  return true;
+} 
 
-CellMembrane::Side parseSide() {
-  char *sideString = strtok(NULL, " ");
-  if (strcmp(sideString, "north") == 0) return CellMembrane::north_;
-  if (strcmp(sideString, "south") == 0) return CellMembrane::south_;
-  if (strcmp(sideString, "east") == 0) return CellMembrane::east_;
-  if (strcmp(sideString, "west") == 0) return CellMembrane::west_;
-  if (strcmp(sideString, "up") == 0) return CellMembrane::up_;
-  if (strcmp(sideString, "down") == 0) return CellMembrane::down_;
-  throw "Invalid side";
-}
+private void executeLine(string line, Simulation simulation) {
+  std::string token;
+  std::istringstream iss(line);
+  if (!getline(iss, token, ' ')) return;
+  if (token[0] == '#') {
+    // comment line
+    return;
+  }
 
-// TODO: Handle malformed input
-void dispatchLine(const string textLineString, Simulation simulation) {
-  char *textLine = strdup(textLineString.c_str());
-
-  char *type = strtok(textLine, " ");
-  if (!type || type[0] == '#') return;
-
-  if (strcmp(type, "Tissue") == 0) {
-    char *tissueName = strtok(NULL, " ");
-
-    if (strcmp(tissueName, "tissueNew") == 0) {
-      tissueName = strtok(NULL, " "); 
-      simulation.TissueIs(tissueName);
+  // got tissue
+  if (token.compare("Tissue")==0) {
+    // get command or tissue name
+    if (!getline(iss, token, ' ')) return; 
+    // got command
+    if (token.compare("tissueNew")==0) { 
+      // get tissue name
+      if (!getline(iss, token, ' ')) return; 
+      simulation.TissueIs(token);
       return;
-    } 
+    } else { 
+    // got tissue name
+      string tissueName = token;
+      string command;
+      if (!getline(iss, command, ' ')) return;
 
-    char *action = strtok(NULL, " ");
+      if (command.compare("cytotoxicCellNew")) {
 
-    if (strcmp(action, "infectedCellsDel") == 0) {
-      simulation.InfectedCellsDel(tissueName);
+        return;
+      } else if (command.compare("helperCellNew")) {
+        return;
+      } else if (command.compare("infectionStartLocationIs")) {
+        return;
+      } else if (command.compare("infectedCellsDel")) {
+        return;
+      } else if (command.compare("cloneCellsNew")) {
+        return;
+      } else {
+        // TODO throw exception
+        // return;
+      }
+    }
+  } else if (token.compare("Cell")==0) {
+  // got cell
+    string tissueName;
+    if (!getline(iss, tissueName, ' ')) return; 
+    Cell::Coordinates loc;
+    if (!extractLocation(&iss, &loc)) {
+      // TODO throw exception
       return;
     }
 
-    if (strcmp(action, "cloneCellsNew") == 0) {
-      simulation.CloneCells(tissueName, parseSide());
+    string command;
+    if (!getline(iss, command, ' ')==0) return; 
+    if (command.compare("cloneNew")) {
+      // clone command
+      string side;
+      if (!getline(iss, side, ' ')) return; 
+      simulation.CloneCell(tissueName, loc, side);
       return;
-    }
+    } else if (command.compare("membrane")==0) {
+      // membrane command
+      string side;
+      if (!getline(iss, side, ' ')) return; 
+      if (!getline(iss, command, ' ')) return; 
 
-    Cell::Coordinates location = parseLocation();
-
-    if (strcmp(action, "infectedStartLocationIs") == 0) {
-      simulation.InfectionIs(tissueName, location, parseSide(), parseStrength());
+      if (command.compare("antibodyStrengthIs")==0) {
+        string strength_str;
+        if (!getline(iss, strength_str, ' ')) return;
+        try {
+          AntibodyStrength strength(atoi(strength_str));  
+          simulation.antibodyStrengthIs(tissueName, loc, side, strength);
+        } catch(...) {
+          return;
+        }
+      }
       return;
-    }
-
-    Cell::CellType cellType;
-    if (strcmp(action, "cytotoxicCellNew") == 0) {
-      cellType = Cell::cytotoxicCell_; 
-    } else if (strcmp(action, "helperCellNew") == 0) {
-      cellType = Cell::helperCell_; 
     } else {
-      throw "Invalid action";
+      // TODO throw exception
+      return;
     }
-    simulation.CellIs(tissueName, cellType, location);
-  } else if (strcmp(type, "Cell") == 0) {
-    char *tissueName = strtok(NULL, " ");
-    Cell::Coordinates location = parseLocation();
-    char *action = strtok(NULL, " ");
-    CellMembrane::Side side = parseSide();
 
-    if (strcmp(action, "cloneNew") == 0) {
-      simulation.CloneCell(tissueName, location, side);
-    } else if (strcmp(action, "membrane") == 0) {
-      strtok(NULL, " "); // Skip the superfluous "antibodyStrengthIs" directive
-      simulation.AntibodyStrengthIs(tissueName, location, side, parseStrength());
-    } else {
-      throw "Invalid action";
-    }
+  } else {
+  // TODO bad case throw exception
   }
 }
 
 /*
+  NOTE Worked with lxing on the main function, it's fairly boilerplate.
   The main takes in one input, the file name with the rules.
   The rules are then executed and the appropriate statistics are printed
   to the console.
@@ -107,10 +124,10 @@ int main(int argc, const char* argv[]) {
   Simulation simulation;
 
   // Read data in, parse it, excute commands.
-  string textLine;
+  string line;
   while(!infile.eof()){
-    getline(infile, textLine);
-    dispatchLine(textLine, simulation);
+    getline(infile, line);
+    executeLine(line, simulation);
   }
 
   return 0;
