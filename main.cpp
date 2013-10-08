@@ -27,12 +27,11 @@ CellMembrane::Side parseSide() {
   if (strcmp(sideString, "west") == 0) return CellMembrane::west_;
   if (strcmp(sideString, "up") == 0) return CellMembrane::up_;
   if (strcmp(sideString, "down") == 0) return CellMembrane::down_;
-  throw std::runtime_error("Invalid side");
+  throw std::runtime_error("Failed to parse side");
 }
 
 // TODO: Handle malformed input
-void dispatchLine(const string textLineString, Simulation simulation) {
-  char *textLine = strdup(textLineString.c_str());
+void dispatchLine(char *textLine, Simulation &simulation) {
 
   char *type = strtok(textLine, " ");
   if (!type || type[0] == '#') return;
@@ -72,7 +71,7 @@ void dispatchLine(const string textLineString, Simulation simulation) {
     } else if (strcmp(action, "helperCellNew") == 0) {
       cellType = Cell::helperCell_; 
     } else {
-      throw std::runtime_error("Invalid action");
+      throw std::runtime_error("Failed to parse action");
     }
     simulation.CellIs(tissueName, cellType, location);
   } else if (strcmp(type, "Cell") == 0) {
@@ -87,7 +86,7 @@ void dispatchLine(const string textLineString, Simulation simulation) {
       strtok(NULL, " "); // Skip the superfluous "antibodyStrengthIs" directive
       simulation.AntibodyStrengthIs(tissueName, location, side, parseStrength());
     } else {
-      throw std::runtime_error("Invalid action");
+      throw std::runtime_error("Failed to parse action");
     }
   }
 }
@@ -111,7 +110,9 @@ int main(int argc, const char* argv[]) {
   string textLine;
   while(!infile.eof()){
     getline(infile, textLine);
-    dispatchLine(textLine, simulation);
+    char *textLineC = strdup(textLine.c_str());
+    dispatchLine(textLineC, simulation);
+    free(textLineC);
   }
 
   return 0;
