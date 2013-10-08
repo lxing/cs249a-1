@@ -39,8 +39,7 @@ TEST(SimulationTest, Simple) {
   SimulationTester simulation;
   SimulationTestSetup(simulation);
   vector<Tissue::Ptr>* tissues = simulation.GetTissues();
-
-  printf("%d\n", tissues->at(0)->cells());
+  
   // Tests to see if a cell was indeed created
   assert(tissues->at(0)->cells()==U32(1));
 }

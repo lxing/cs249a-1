@@ -10,23 +10,42 @@
 using namespace std;
 
 
-private bool extractLocation(std::istringstream iss, Cell::Coordinates _loc) {
+bool extractLocation(std::istringstream& iss, Cell::Coordinates& _loc) {
   string x,y,z;
   if (!getline(iss, x, ' ')) return false;
   if (!getline(iss, y, ' ')) return false;
   if (!getline(iss, z, ' ')) return false;
-  _loc.x = atoi(x[0]);
-  _loc.y = atoi(y[0]);
-  _loc.z = atoi(z[0]);
+  _loc.x = atoi(x[0] + "");
+  _loc.y = atoi(y[0] + "");
+  _loc.z = atoi(z[0] + "");
   return true;
 } 
 
-private void executeLine(string line, Simulation simulation) {
+CellMembrane::Side extractSide(const string& side_str) {
+  if (side_str.compare("north")==0) {
+    return CellMembrane::north_;
+  } else if (side_str.compare("east")==0) {
+    return CellMembrane::east_;
+  } else if (side_str.compare("south")==0) {
+    return CellMembrane::south_;
+  } else if (side_str.compare("west")==0) {
+    return CellMembrane::west_;
+  } else if (side_str.compare("up")==0) {
+    return CellMembrane::up_;
+  } else if (side_str.compare("down")==0) {
+    return CellMembrane::down_;
+  } else {
+    // TODO throw exception
+    throw "Invalid side supplied.";
+  }
+}
+
+void executeLine(string line, Simulation simulation) {
   std::string token;
   std::istringstream iss(line);
   if (!getline(iss, token, ' ')) return;
   if (token[0] == '#') {
-    // comment line
+    // got comment
     return;
   }
 
@@ -67,7 +86,7 @@ private void executeLine(string line, Simulation simulation) {
     string tissueName;
     if (!getline(iss, tissueName, ' ')) return; 
     Cell::Coordinates loc;
-    if (!extractLocation(&iss, &loc)) {
+    if (!extractLocation(iss, loc)) {
       // TODO throw exception
       return;
     }
@@ -76,22 +95,24 @@ private void executeLine(string line, Simulation simulation) {
     if (!getline(iss, command, ' ')==0) return; 
     if (command.compare("cloneNew")) {
       // clone command
-      string side;
-      if (!getline(iss, side, ' ')) return; 
+      string side_str;
+      if (!getline(iss, side_str, ' ')) return; 
+      CellMembrane::Side side = extractSide(side_str);
       simulation.CloneCell(tissueName, loc, side);
       return;
     } else if (command.compare("membrane")==0) {
       // membrane command
-      string side;
-      if (!getline(iss, side, ' ')) return; 
-      if (!getline(iss, command, ' ')) return; 
+      string side_str;
+      if (!getline(iss, side_str, ' ')) return; 
+      CellMembrane::Side side = extractSide(side_str);
 
+      if (!getline(iss, command, ' ')) return; 
       if (command.compare("antibodyStrengthIs")==0) {
         string strength_str;
         if (!getline(iss, strength_str, ' ')) return;
         try {
-          AntibodyStrength strength(atoi(strength_str));  
-          simulation.antibodyStrengthIs(tissueName, loc, side, strength);
+          AntibodyStrength strength(atoi(strength_str.c_str()));  
+          simulation.AntibodyStrengthIs(tissueName, loc, side, strength);
         } catch(...) {
           return;
         }

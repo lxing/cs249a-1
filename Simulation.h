@@ -15,7 +15,41 @@ class Simulation {
   virtual ~Simulation();
 
   class TissueReactor : public Tissue::Notifiee {
+   public:
     void onCellNew(Cell::Ptr _cell);
+
+    static TissueReactor* TissueReactorIs(Tissue* t) {
+      TissueReactor* tr = new TissueReactor(t);
+      return tr;
+    }
+   protected:
+    TissueReactor(Tissue* t) : Tissue::Notifiee() {
+      notifierIs(t);
+    }
+  };
+
+  class SimulationStats {
+   public:
+    SimulationStats();
+    ~SimulationStats() {};
+    void incNumInfectedCells() { ++numInfectedCells; }
+    void incNumInfectionAttempts() { ++numInfectionAttempts; }
+    void incTotalDiseaseAndAntibodyStrengthDiff() { 
+      ++totalDiseaseAndAntibodyStrengthDiff;
+    }
+    void incNumLiveCytotoxicCells() { ++numLiveCytotoxicCells; }
+    void incNumLiveHelperCells() { ++numLiveHelperCells; }
+    void incInfectionSpread() { ++infectionSpread; }
+    void incLongestInfectionPathLength() { ++longestInfectionPathLength; }
+
+   private:
+    U64 numInfectedCells;
+    U32 numInfectionAttempts;
+    U64 totalDiseaseAndAntibodyStrengthDiff;
+    U64 numLiveCytotoxicCells;
+    U64 numLiveHelperCells;
+    U64 infectionSpread;
+    U64 longestInfectionPathLength;
   };
 
   void TissueIs (const Fwk::String _name);
@@ -41,15 +75,8 @@ class Simulation {
   std::vector<Tissue::Ptr>::iterator GetTissue (const Fwk::String _name);
   void CheckTissue (const std::vector<Tissue::Ptr>::iterator it);
   Cell::Coordinates GetCloneLocation(Cell::Coordinates _loc, CellMembrane::Side _side);
-};
 
-class SimulationCount {
- public:
-  U8 value() const { return value_; }
-  void valueIs(U8 _value) { value_ = _value; }
-  void valueInc(U8 _inc) { value_ += _inc; }
- protected:
-  U8 value_;
+  SimulationStats stats_;
 };
 
 #endif

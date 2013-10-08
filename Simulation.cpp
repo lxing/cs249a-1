@@ -5,20 +5,32 @@
 #include <stdlib.h>
 #include "Simulation.h"
 
+#define kMembraneName "Membrane"
+
 void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
   for (int i=0; i<6; i++) {
     CellMembrane::Side side = static_cast<CellMembrane::Side>(i);
     AntibodyStrength strength(0);
     if (_cell->cellType() == Cell::cytotoxicCell_) {
-
+      strength.valueIs(99);
     } else if (_cell->cellType() == Cell::helperCell_) {
-
+      strength.valueIs(0);
     } else {
       // TODO(rhau) throw exception if not one of those cell types
     }
 
-    _cell->membrane(side)->antibodyStrengthIs(strength); // update strength
+    // create membrane
+    CellMembrane::Ptr membrane = _cell->membraneNew(kMembraneName, side);
+    // update strength
+    _cell->membrane(side)->antibodyStrengthIs(strength); 
   }
+}
+
+Simulation::SimulationStats::SimulationStats() : 
+    numInfectedCells(0), numInfectionAttempts(0),
+    totalDiseaseAndAntibodyStrengthDiff(0),
+    numLiveCytotoxicCells(0), numLiveHelperCells(0),
+    infectionSpread(0), longestInfectionPathLength(0) {
 }
 
 Simulation::Simulation() {
@@ -33,8 +45,9 @@ void Simulation::TissueIs (const Fwk::String _name) {
   std::vector<Tissue::Ptr>::iterator it = GetTissue(_name);
   if (it != tissues_.end()) return;
 
-  Tissue::Ptr ptr(Tissue::TissueNew(_name));
-  tissues_.push_back(ptr);
+  Tissue::Ptr tissue(Tissue::TissueNew(_name));
+  TissueReactor *m = TissueReactor::TissueReactorIs(tissue.ptr());
+  tissues_.push_back(tissue);
 }
 
 void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type, 
