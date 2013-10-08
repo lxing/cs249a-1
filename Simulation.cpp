@@ -14,8 +14,8 @@
 Simulation::Simulation() {}
 Simulation::~Simulation() {}
 
-void Simulation::TissueIs(Fwk::String _tissueName) {
-  Tissue::Ptr tissue = GetTissue(_tissueName);
+void Simulation::tissueIs(Fwk::String _tissueName) {
+  Tissue::Ptr tissue = Simulation::tissue(_tissueName);
   if (tissue.ptr()) return;
   Tissue::Ptr newTissue(Tissue::TissueNew(_tissueName));   
   tissues_.push_back(newTissue); 
@@ -24,9 +24,9 @@ void Simulation::TissueIs(Fwk::String _tissueName) {
   reactors_.push_back(reactor);
 }
 
-void Simulation::CellIs(Fwk::String _tissueName, Cell::CellType _type, 
+void Simulation::cellIs(Fwk::String _tissueName, Cell::CellType _type, 
                         Cell::Coordinates _loc) {
-  Tissue::Ptr tissue = GetTissue(_tissueName);
+  Tissue::Ptr tissue = Simulation::tissue(_tissueName);
   if (!tissue.ptr()) return;
   Cell::PtrConst existing = tissue->cell(_loc);
   if (existing.ptr()) throw std::runtime_error("Cell Overwrite");
@@ -34,18 +34,18 @@ void Simulation::CellIs(Fwk::String _tissueName, Cell::CellType _type,
   tissue->cellIs(cell);
 }
 
-bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
+bool Simulation::infectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
                                 AntibodyStrength _strength) {
   return true;
 }
 
 
-void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
+void Simulation::infectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
                              CellMembrane::Side _side, AntibodyStrength _strength) {
 }
 
-void Simulation::InfectionDel(Fwk::String _tissueName) {
-  Tissue::Ptr tissue = GetTissue(_tissueName);
+void Simulation::infectionDel(Fwk::String _tissueName) {
+  Tissue::Ptr tissue = Simulation::tissue(_tissueName);
   if (!tissue.ptr()) return;
 
   for (Tissue::CellIterator it = tissue->cellIter(); it; ++it) {
@@ -55,15 +55,15 @@ void Simulation::InfectionDel(Fwk::String _tissueName) {
   }
 }
 
-void Simulation::CloneCell(Fwk::String _tissueName, Cell::Coordinates _loc,
+void Simulation::cloneCell(Fwk::String _tissueName, Cell::Coordinates _loc,
                            CellMembrane::Side _side) {
-  Tissue::Ptr tissue = GetTissue(_tissueName);
+  Tissue::Ptr tissue = Simulation::tissue(_tissueName);
   if (!tissue.ptr()) return;
   Cell::PtrConst cell = tissue->cell(_loc);
   if (!cell.ptr()) return;
 
-  Cell::Coordinates newLoc = LocationMove(_loc, _side);
-  CellIs(_tissueName, cell->cellType(), newLoc);
+  Cell::Coordinates newLoc = locationMove(_loc, _side);
+  cellIs(_tissueName, cell->cellType(), newLoc);
 
   // Copy over antibody strengths
   Cell::Ptr newCell = tissue->cell(newLoc);
@@ -74,8 +74,8 @@ void Simulation::CloneCell(Fwk::String _tissueName, Cell::Coordinates _loc,
   }
 }
 
-void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) {
-  Tissue::Ptr tissue = GetTissue(_tissueName);
+void Simulation::cloneCells (Fwk::String _tissueName, CellMembrane::Side _side) {
+  Tissue::Ptr tissue = Simulation::tissue(_tissueName);
   if (!tissue.ptr()) return;
 
   vector<Cell::Coordinates> cloneLocs;
@@ -85,16 +85,16 @@ void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) 
 
   for (U32 i = 0; i < cloneLocs.size(); ++i) {
     try {
-      CloneCell(_tissueName, cloneLocs[i], _side);
+      cloneCell(_tissueName, cloneLocs[i], _side);
     } catch (...) {
       // No-op, just continue cloning
     }
   }
 }
 
-void Simulation::AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
+void Simulation::antibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
                                      CellMembrane::Side _side, AntibodyStrength _strength) {
-  Tissue::Ptr tissue = GetTissue(_tissueName);
+  Tissue::Ptr tissue = Simulation::tissue(_tissueName);
   if (!tissue.ptr()) return;
   Cell::Ptr cell = tissue->cell(_loc);
   if (!cell.ptr()) return;
@@ -129,7 +129,7 @@ void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
 /* Simulation Helpers */
 /**********************/
 
-Tissue::Ptr Simulation::GetTissue(Fwk::String _tissueName) {
+Tissue::Ptr Simulation::tissue(Fwk::String _tissueName) {
   Tissue::Ptr tissue;
   for (TissueList::iterator it = tissues_.begin(); it != tissues_.end(); ++it) {
     tissue = *it;
@@ -139,7 +139,7 @@ Tissue::Ptr Simulation::GetTissue(Fwk::String _tissueName) {
   return tissue;
 }
 
-Simulation::TissueReactor::Ptr Simulation::GetReactor(Fwk::String _tissueName) {
+Simulation::TissueReactor::Ptr Simulation::reactor(Fwk::String _tissueName) {
   TissueReactor::Ptr reactor;
   for (ReactorList::iterator it = reactors_.begin(); it != reactors_.end(); ++it) {
     reactor = *it;
@@ -149,7 +149,7 @@ Simulation::TissueReactor::Ptr Simulation::GetReactor(Fwk::String _tissueName) {
   return reactor;
 }
 
-Cell::Coordinates Simulation::LocationMove(Cell::Coordinates _loc, CellMembrane::Side _side) {
+Cell::Coordinates Simulation::locationMove(Cell::Coordinates _loc, CellMembrane::Side _side) {
   Cell::Coordinates newLoc = _loc;
   switch (_side) {
     case CellMembrane::north_ : newLoc.y += 1; break;

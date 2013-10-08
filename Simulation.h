@@ -16,18 +16,17 @@ public:
   Simulation();
   virtual ~Simulation();
 
-  void TissueIs(Fwk::String _tissueName);
-  void CellIs(Fwk::String _tissueName, Cell::CellType _type,
+  void tissueIs(Fwk::String _tissueName);
+  void cellIs(Fwk::String _tissueName, Cell::CellType _type,
               Cell::Coordinates _loc);
-  void InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
+  void infectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
                    CellMembrane::Side _side, AntibodyStrength _strength);
-  void InfectionDel(Fwk::String _tissueName);
-  void CloneCell(Fwk::String _tissueName, Cell::Coordinates _loc,
+  void infectionDel(Fwk::String _tissueName);
+  void cloneCell(Fwk::String _tissueName, Cell::Coordinates _loc,
                  CellMembrane::Side _side);
-  void CloneCells(Fwk::String _tissueName, CellMembrane::Side _side);
-  void AntibodyStrengthIs(Fwk::String _tissueName, Cell::Coordinates _loc,
+  void cloneCells(Fwk::String _tissueName, CellMembrane::Side _side);
+  void antibodyStrengthIs(Fwk::String _tissueName, Cell::Coordinates _loc,
                           CellMembrane::Side _side, AntibodyStrength _strength);
-  TissueList *Tissues() { return &tissues_; }
 
   class TissueReactor : public Tissue::Notifiee {
   public:
@@ -71,16 +70,16 @@ public:
 
   typedef std::vector<TissueReactor::Ptr> ReactorList;
 
+  Tissue::Ptr tissue(Fwk::String _tissueName);
+  TissueReactor::Ptr reactor(Fwk::String _tissueName);
 
 protected:
   TissueList tissues_;
   ReactorList reactors_;
 
-  bool InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
+  bool infectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
                       AntibodyStrength _strength);
-  Tissue::Ptr GetTissue(Fwk::String _tissueName);
-  TissueReactor::Ptr GetReactor(Fwk::String _tissueName);
-  Cell::Coordinates LocationMove(Cell::Coordinates _loc, CellMembrane::Side _side);
+  Cell::Coordinates locationMove(Cell::Coordinates _loc, CellMembrane::Side _side);
 };
 
 #endif

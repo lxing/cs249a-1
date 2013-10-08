@@ -72,13 +72,13 @@ gtest_main.a : gtest-all.o gtest_main.o
 # gtest_main.a, depending on whether it defines its own main()
 # function.
 
-Test.o : $(USER_DIR)/Test.cpp \
+Test.o : $(USER_DIR)/unit-tests/Test.cpp \
          $(USER_DIR)/Simulation.h \
          $(USER_DIR)/Tissue.cpp \
          $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/Test.cpp
+	       $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/unit-tests/Test.cpp
 
 Test : $(USER_DIR)/Simulation.o $(USER_DIR)/Tissue.o \
-		Test.o  $(USER_DIR)/fwk/BaseCollection.o \
-		$(USER_DIR)/fwk/BaseNotifiee.o $(USER_DIR)/fwk/Exception.o gtest_main.a
-		$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+		   Test.o  $(USER_DIR)/fwk/BaseCollection.o \
+		   $(USER_DIR)/fwk/BaseNotifiee.o $(USER_DIR)/fwk/Exception.o gtest_main.a
+		   $(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@

@@ -41,19 +41,19 @@ void dispatchLine(char *textLine, Simulation &simulation) {
 
     if (strcmp(tissueName, "tissueNew") == 0) {
       tissueName = strtok(NULL, " "); 
-      simulation.TissueIs(tissueName);
+      simulation.tissueIs(tissueName);
       return;
     } 
 
     char *action = strtok(NULL, " ");
 
     if (strcmp(action, "infectedCellsDel") == 0) {
-      simulation.InfectionDel(tissueName);
+      simulation.infectionDel(tissueName);
       return;
     }
 
     if (strcmp(action, "cloneCellsNew") == 0) {
-      simulation.CloneCells(tissueName, parseSide());
+      simulation.cloneCells(tissueName, parseSide());
       return;
     }
 
@@ -61,7 +61,7 @@ void dispatchLine(char *textLine, Simulation &simulation) {
 
     if (strcmp(action, "infectionStartLocationIs") == 0) {
       CellMembrane::Side side = parseSide();
-      simulation.InfectionIs(tissueName, location, side, parseStrength());
+      simulation.infectionIs(tissueName, location, side, parseStrength());
       return;
     }
 
@@ -73,7 +73,7 @@ void dispatchLine(char *textLine, Simulation &simulation) {
     } else {
       throw std::runtime_error("Failed to parse action");
     }
-    simulation.CellIs(tissueName, cellType, location);
+    simulation.cellIs(tissueName, cellType, location);
   } else if (strcmp(type, "Cell") == 0) {
     char *tissueName = strtok(NULL, " ");
     Cell::Coordinates location = parseLocation();
@@ -81,10 +81,10 @@ void dispatchLine(char *textLine, Simulation &simulation) {
     CellMembrane::Side side = parseSide();
 
     if (strcmp(action, "cloneNew") == 0) {
-      simulation.CloneCell(tissueName, location, side);
+      simulation.cloneCell(tissueName, location, side);
     } else if (strcmp(action, "membrane") == 0) {
       strtok(NULL, " "); // Skip the superfluous "antibodyStrengthIs" directive
-      simulation.AntibodyStrengthIs(tissueName, location, side, parseStrength());
+      simulation.antibodyStrengthIs(tissueName, location, side, parseStrength());
     } else {
       throw std::runtime_error("Failed to parse action");
     }
