@@ -1,129 +1,65 @@
-//#include <limits.h>
-#include "Simulation.h"
-//#include "fwk/Types.h"
 #include "gtest/gtest.h"
+#include "Simulation.h"
 
-#define TestTissue "Tissue1"
 
-class SimulationTest : public Simulation {
+#define TISSUE_NAME "Tissue1"
+#define SIDE_MIN 0
+#define SIDE_MAX 6
+
+class SimulationTest : public ::testing::Test {
 public:
-  SimulationTester() : Simulation() {}
+  typedef std::vector<Tissue::Ptr> TissueList; 
 
-  vector<Tissue::Ptr>* GetTissues() {
-    return &tissues_;
+  Cell::Coordinates Loc(int x, int y, int z) {
+    Cell::Coordinates loc;
+    loc.x = x;
+    loc.y = y;
+    loc.z = z;
+    return loc;
   }
+
+protected:
+  virtual void SetUp() {
+    simpleSim.TissueIs(TISSUE_NAME);
+    simpleSim.CellIs(TISSUE_NAME, Cell::cytotoxicCell_, Loc(0,0,0));
+
+    multiSim.TissueIs(TISSUE_NAME);
+    multiSim.CellIs(TISSUE_NAME, Cell::cytotoxicCell_, Loc(0,0,0));
+    multiSim.CellIs(TISSUE_NAME, Cell::cytotoxicCell_, Loc(1,0,0));
+  }
+
+  Simulation simpleSim;
+  Simulation multiSim;
 };
 
-Cell::Coordinates coords(int x, int y, int z) {
-  Cell::Coordinates loc;
-  loc.x = 0;
-  loc.y = 0;
-  loc.z = 0;
-  return loc;
+
+TEST_F(SimulationTest, TissueIs) {
+  TissueList *tissues = simpleSim.Tissues(); 
+  ASSERT_EQ(tissues->size(), 1);
+  ASSERT_EQ(strcmp(tissues->at(0)->name().c_str(), TISSUE_NAME), 0);
 }
 
-void TestSetup (SimulationTester& simulation) {
-  simulation.TissueIs(kTestTissueName);
+TEST_F(SimulationTest, CellIs) {
+  TissueList *tissues = simpleSim.Tissues(); 
 
-  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
-  assert(tissues->size() == 1);
-  assert(strcmp(tissues->at(0)->name().c_str(), kTestTissueName)==0);
+  Cell::Ptr cell = tissues->at(0)->cell(SimulationTest::Loc(0,0,0));
+  ASSERT_TRUE(cell.ptr());
+  ASSERT_EQ(cell->cellType(), Cell::cytotoxicCell_);
 
-  Cell::Coordinates coord;
-  coord.x = 0;
-  coord.y = 0;
-  coord.z = 0;
-  simulation.CellIs(kTestTissueName, Cell::tCell_, coord);
+  for (int i = SIDE_MIN; i < SIDE_MAX; i++) {
+    CellMembrane::Side side = (CellMembrane::Side) i;
+    CellMembrane::Ptr membrane = cell->membrane(side);
+    ASSERT_TRUE(membrane.ptr());
+  }
 }
 
-// Tests factorial of negative numbers.
-TEST(SimulationTest, Simple) {
-  SimulationTester simulation;
-  SimulationTestSetup(simulation);
-  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
-
-  printf("%d\n", tissues->at(0)->cells());
-  // Tests to see if a cell was indeed created
-  assert(tissues->at(0)->cells()==U32(1));
+TEST_F(SimulationTest, antibodyStrengthIs) { 
+  TissueList *tissues = simpleSim.Tissues(); 
+  Cell::Ptr cell = tissues->at(0)->cell(SimulationTest::Loc(0,0,0));
 }
 
-TEST(SimulationTest, Delete) {
-  SimulationTester simulation;
-  SimulationTestSetup(simulation);
-  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
-
-  Cell::Coordinates coord;
-  coord.x = 0;
-  coord.y = 0;
-  coord.z = 0;
-  Cell::Ptr cell = tissues->at(0)->cell(coord);
-  cell->healthIs(Cell::infected_);
-  simulation.InfectedCellsDel(kTestTissueName);
-  // Tests to see if the infected cell was deleted
-  assert(tissues->at(0)->cells()==U32(0));
+TEST_F(SimulationTest, CloneCell) {
 }
 
-TEST(SimulationTest, Clone) {
-  SimulationTester simulation;
-  SimulationTestSetup(simulation);
-  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
-  assert(tissues->at(0)->cells() == U32(1));
-
-  Cell::Coordinates coord;
-  coord.x = 0;
-  coord.y = 0;
-  coord.z = 0;
-  simulation.CloneCell(kTestTissueName, coord, CellMembrane::east_);
-  // Tests to see that a cell was cloned
-  assert(tissues->at(0)->cells() == U32(2));
-}
-
-TEST(SimulationTest, CloneMultiple) {
-  SimulationTester simulation;
-  SimulationTestSetup(simulation);
-  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
-
-  Cell::Coordinates coord;
-  coord.x = 0;
-  coord.y = 0;
-  coord.z = 0;
-  simulation.CloneCell(kTestTissueName, coord, CellMembrane::east_);
-  assert(tissues->at(0)->cells() == U32(2));
-
-  // Tests to see that two cells were cloned
-  simulation.CloneCells(kTestTissueName, CellMembrane::north_);
-  assert(tissues->at(0)->cells() == U32(4));
-}
-
-TEST(SimulationTest, Infection) {
-  SimulationTester simulation;
-  SimulationTestSetup(simulation);
-  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
-
-  Cell::Coordinates coord;
-  coord.x = 0;
-  coord.y = 0;
-  coord.z = 0;
-  AntibodyStrength strength(100);
-  simulation.InfectionIs(kTestTissueName, coord, CellMembrane::north_, strength);
-
-  Cell::Ptr cell = tissues->at(0)->cell(coord);
-  assert(Cell::infected_ == cell->health());
-}
-
-TEST(SimulationTest, AntibodyStrength) {
-  SimulationTester simulation;
-  SimulationTestSetup(simulation);
-  vector<Tissue::Ptr>* tissues = simulation.GetTissues();
-
-  Cell::Coordinates coord;
-  coord.x = 0;
-  coord.y = 0;
-  coord.z = 0;
-  Cell::Ptr cell = tissues->at(0)->cell(coord);
-
-  simulation.AntibodyStrengthIs(kTestTissueName, coord, CellMembrane::north_, 0);
-  AntibodyStrength expected_strength(0);
-  assert(expected_strength ==
-      cell->membrane(CellMembrane::north_)->antibodyStrength());
+TEST_F(SimulationTest, CloneCells) {
 }

@@ -11,6 +11,8 @@ using namespace std;
 
 class Simulation {
 public:
+  typedef std::vector<Tissue::Ptr> TissueList;
+
   Simulation();
   virtual ~Simulation();
 
@@ -26,8 +28,22 @@ public:
   void AntibodyStrengthIs(Fwk::String _tissueName, Cell::Coordinates _loc,
                           CellMembrane::Side _side, AntibodyStrength _strength);
 
+  TissueList *Tissues() { return &tissues_; }
+
+  class TissueReactor : public Tissue::Notifiee {
+  public:
+    void onCellNew(Cell::Ptr _cell);
+    static TissueReactor::Ptr TissueReactorIs(Tissue::Ptr _tissue) {
+      return new TissueReactor(_tissue);
+    }
+  protected:
+    TissueReactor(Tissue::Ptr _tissue) : Tissue::Notifiee() {
+      notifierIs(_tissue);
+    }
+  };
+
 protected:
-  std::vector<Tissue::Ptr> tissues_;
+  TissueList tissues_;
   bool InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
                       AntibodyStrength _strength);
   Tissue::Ptr GetTissue(Fwk::String _tissueName);

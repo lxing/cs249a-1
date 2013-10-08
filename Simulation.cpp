@@ -3,19 +3,27 @@
 #include <stdlib.h>
 #include "Simulation.h"
 
+#define SIDE_MIN 0
+#define SIDE_MAX 6
+#define MEMBRANE_NAME "Membrane"
+
+/*******************/
+/* Simulation Impl */
+/*******************/
+
 Simulation::Simulation() {}
 Simulation::~Simulation() {}
 
 void Simulation::TissueIs(Fwk::String _tissueName) {
   Tissue::Ptr tissue = GetTissue(_tissueName);
   if (tissue.ptr()) return;
-  cout << _tissueName;
-  Tissue::Ptr tissueNew(Tissue::TissueNew(_tissueName));   
-  tissues_.push_back(tissueNew); 
+  Tissue::Ptr newTissue(Tissue::TissueNew(_tissueName));   
+  TissueReactor::Ptr tissueReactor = TissueReactor::TissueReactorIs(newTissue);
+  tissues_.push_back(newTissue); 
 }
 
-void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type, 
-                         Cell::Coordinates _loc) {
+void Simulation::CellIs(Fwk::String _tissueName, Cell::CellType _type, 
+                        Cell::Coordinates _loc) {
   Tissue::Ptr tissue = GetTissue(_tissueName);
   if (!tissue.ptr()) return;
   Cell::PtrConst existing = tissue->cell(_loc);
@@ -38,9 +46,8 @@ void Simulation::InfectionDel(Fwk::String _tissueName) {
   Tissue::Ptr tissue = GetTissue(_tissueName);
   if (!tissue.ptr()) return;
 
-  vector<Cell::Coordinates> infectedLocs;
-  for (Tissue::CellIteratorConst it = tissue->cellIterConst(); it; ++it) {
-    if ((*it)->healthIs(Cell::infected())) {
+  for (Tissue::CellIterator it = tissue->cellIter(); it; ++it) {
+    if ((*it)->health() == Cell::infected_) {
       tissue->cellDel((*it)->location().name());
     }
   }
@@ -56,7 +63,13 @@ void Simulation::CloneCell(Fwk::String _tissueName, Cell::Coordinates _loc,
   Cell::Coordinates newLoc = LocationMove(_loc, _side);
   CellIs(_tissueName, cell->cellType(), newLoc);
 
-  // TODO: Copy antibody strengths
+  // Copy over antibody strengths
+  Cell::Ptr newCell = tissue->cell(newLoc);
+  for (int i = SIDE_MIN; i < SIDE_MAX; i++) {
+    CellMembrane::Side side = (CellMembrane::Side) i;
+    newCell->membrane(side)->antibodyStrengthIs(
+      cell->membrane(side)->antibodyStrength());
+  }
 }
 
 void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) {
@@ -88,9 +101,35 @@ void Simulation::AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates 
   membrane->antibodyStrengthIs(_strength); 
 }
 
+
+/*****************/
+/* TissueReactor */
+/*****************/
+
+void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
+  AntibodyStrength strength;
+  switch (_cell->cellType()) {
+    case Cell::cytotoxicCell_ : strength.valueIs(100);
+    case Cell::helperCell_ : strength.valueIs(0);
+    default : throw std::runtime_error("Invalid cell type");
+  }
+
+  // Break abstraction to manually iteratre through sides
+  for (int i = SIDE_MIN; i < SIDE_MAX; i++) {
+    CellMembrane::Side side = (CellMembrane::Side) i;
+    CellMembrane::Ptr membrane = _cell->membraneNew(MEMBRANE_NAME, side);
+    membrane->antibodyStrengthIs(strength); 
+  }
+}
+
+
+/**********************/
+/* Simulation Helpers */
+/**********************/
+
 Tissue::Ptr Simulation::GetTissue(Fwk::String _tissueName) {
   Tissue::Ptr tissue;
-  for (std::vector<Tissue::Ptr>::iterator it = tissues_.begin(); it != tissues_.end(); ++it) {
+  for (TissueList::iterator it = tissues_.begin(); it != tissues_.end(); ++it) {
     tissue = *it;
     if (!strcmp(tissue->name().c_str(), _tissueName.c_str())) {
       return tissue;
@@ -108,6 +147,7 @@ Cell::Coordinates Simulation::LocationMove(Cell::Coordinates _loc, CellMembrane:
     case CellMembrane::west_: newLoc.x -= 1;
     case CellMembrane::up_: newLoc.z += 1;
     case CellMembrane::down_: newLoc.z -= 1;
+    default : throw std::runtime_error("Invalid side");
   }
   return newLoc;
 }
