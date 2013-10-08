@@ -30,6 +30,7 @@ public:
 
   TissueList *Tissues() { return &tissues_; }
 
+  /* Event Reactor */
   class TissueReactor : public Tissue::Notifiee {
   public:
     void onCellNew(Cell::Ptr _cell);
@@ -40,26 +41,25 @@ public:
     TissueReactor(Tissue::Ptr _tissue) : Tissue::Notifiee() {
       notifierIs(_tissue);
     }
+
+    U32 infected_;
+    U32 attempts_;
+    U32 strengthDiff_;
+    U32 cytotoxicCount_;
+    U32 helperCount_;
+    U32 spread_;
+    U32 pathLength;
   };
+
 
 protected:
   TissueList tissues_;
+  //std::vector<Tissue::Ptr> reactors_;
+
   bool InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
                       AntibodyStrength _strength);
   Tissue::Ptr GetTissue(Fwk::String _tissueName);
   Cell::Coordinates LocationMove(Cell::Coordinates _loc, CellMembrane::Side _side);
-};
-
-class SimulationCount {
-public:
-  U8 value() const { return value_; }
-  void valueIs(U8 _value) { value_ = _value; }
-  void valueInc(U8 _inc) { value_ += _inc; }
-  SimulationCount(U8 _value=0): value_(_value) {
-    if (_value < 0) throw Fwk::RangeException("value=range()");
-  }
-protected:
-  U8 value_;
 };
 
 #endif

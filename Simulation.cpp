@@ -18,7 +18,8 @@ void Simulation::TissueIs(Fwk::String _tissueName) {
   Tissue::Ptr tissue = GetTissue(_tissueName);
   if (tissue.ptr()) return;
   Tissue::Ptr newTissue(Tissue::TissueNew(_tissueName));   
-  TissueReactor::Ptr tissueReactor = TissueReactor::TissueReactorIs(newTissue);
+  TissueReactor::Ptr tReactor = TissueReactor::TissueReactorIs(newTissue);
+
   tissues_.push_back(newTissue); 
 }
 
@@ -81,7 +82,7 @@ void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) 
     cloneLocs.push_back((*it)->location());
   }
 
-  for (U8 i = 0; i < cloneLocs.size(); ++i) {
+  for (U32 i = 0; i < cloneLocs.size(); ++i) {
     try {
       CloneCell(_tissueName, cloneLocs[i], _side);
     } catch (...) {
@@ -137,6 +138,8 @@ Tissue::Ptr Simulation::GetTissue(Fwk::String _tissueName) {
   }
   return tissue;
 }
+
+
 
 Cell::Coordinates Simulation::LocationMove(Cell::Coordinates _loc, CellMembrane::Side _side) {
   Cell::Coordinates newLoc = _loc;
