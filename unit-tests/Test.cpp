@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "Simulation.h"
+#include "../Simulation.h"
 
 
 #define TISSUE_NAME "Tissue1"
