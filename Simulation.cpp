@@ -33,6 +33,19 @@ Simulation::SimulationStats::SimulationStats() :
     infectionSpread(0), longestInfectionPathLength(0) {
 }
 
+string Simulation::SimulationStats::ToString() {
+  // TODO substitute letters in if values never set
+  string results = "";
+  results += numInfectedCells + " ";
+  results += numInfectionAttempts + " ";
+  results += totalDiseaseAndAntibodyStrengthDiff + " ";
+  results += numLiveCytotoxicCells + " ";
+  results += numLiveHelperCells + " ";
+  results += infectionSpread + " ";
+  results += longestInfectionPathLength;
+  return results;
+}
+
 Simulation::Simulation() {
   // TODO(rhau) fill in
 }
@@ -67,11 +80,12 @@ bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side,
   CellMembrane::Ptr membrane = _cell->membrane(_side);
   if (_strength <= membrane->antibodyStrength()) return false; 
   _cell->healthIs(_cell->infected());
+  stats_.incNumInfectedCells();
   return true;
 }
 
 void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
-                             CellMembrane::Side _side, AntibodyStrength _strength) {
+    CellMembrane::Side _side, AntibodyStrength _strength) {
   std::queue<Cell::Ptr> infectionFringe;
   std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
   CheckTissue(it);

@@ -42,6 +42,8 @@ class Simulation {
     void incInfectionSpread() { ++infectionSpread; }
     void incLongestInfectionPathLength() { ++longestInfectionPathLength; }
 
+    string ToString();
+
    private:
     U64 numInfectedCells;
     U32 numInfectionAttempts;

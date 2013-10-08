@@ -77,8 +77,8 @@ void executeLine(string line, Simulation simulation) {
       } else if (command.compare("cloneCellsNew")) {
         return;
       } else {
-        // TODO throw exception
-        // return;
+        throw "Unknown Cell New Exception";
+        return;
       }
     }
   } else if (token.compare("Cell")==0) {
@@ -87,7 +87,7 @@ void executeLine(string line, Simulation simulation) {
     if (!getline(iss, tissueName, ' ')) return; 
     Cell::Coordinates loc;
     if (!extractLocation(iss, loc)) {
-      // TODO throw exception
+      throw "Location not found exception";
       return;
     }
 
@@ -119,12 +119,12 @@ void executeLine(string line, Simulation simulation) {
       }
       return;
     } else {
-      // TODO throw exception
+      throw "Unknown command exception";
       return;
     }
 
   } else {
-  // TODO bad case throw exception
+    throw "Uknown command exception";
   }
 }
 
