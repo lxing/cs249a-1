@@ -1,2 +1,7 @@
+.*afs*
+*.log
 *.o
 *.swp
+gtest-1.7.0/
+Simulation.rhau.*
+asgn1
