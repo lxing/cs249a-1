@@ -22,9 +22,9 @@ public:
   void infectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
                    CellMembrane::Side _side, AntibodyStrength _strength);
   void infectionDel(Fwk::String _tissueName);
-  void cloneCell(Fwk::String _tissueName, Cell::Coordinates _loc,
-                 CellMembrane::Side _side);
-  void cloneCells(Fwk::String _tissueName, CellMembrane::Side _side);
+  void clonedCellIs(Fwk::String _tissueName, Cell::Coordinates _loc,
+                    CellMembrane::Side _side);
+  void clonedCellsAre(Fwk::String _tissueName, CellMembrane::Side _side);
   void antibodyStrengthIs(Fwk::String _tissueName, Cell::Coordinates _loc,
                           CellMembrane::Side _side, AntibodyStrength _strength);
 
@@ -47,14 +47,14 @@ public:
     int helperCount() { return helperCount_; };
     int spread() { return spread_; };
     int pathLength() { return pathLength_; };
-    void infectedInc(int val) { infected_ += val; };
-    void attemptsInc(int val) { attempts_ += val; };
-    void cytotoxicCountInc(int val) { cytotoxicCount_ += val; };
-    void helperCountInc(int val) { helperCount_ += val; };
+    void infectedIs(int _infected) { infected_ = _infected; };
+    void attemptsIs(int _attempts) { attempts_ = _attempts; };
+    void strengthDiffIs(int _strengthDiff) { strengthDiff_ = _strengthDiff; };
 
   protected:
-    Stats(Tissue::Ptr _tissue) : Tissue::Notifiee() {
-      tissue_ = _tissue;
+    Stats(Tissue::Ptr _tissue): Tissue::Notifiee(),
+        infected_(0),attempts_(0),strengthDiff_(0),cytotoxicCount_(0),
+        helperCount_(0),spread_(0),pathLength_(0),tissue_(_tissue) {
       notifierIs(_tissue);
     }
 
@@ -78,8 +78,9 @@ protected:
   StatsList statuses_;
 
   bool infectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
-                      AntibodyStrength _strength);
-  Cell::Coordinates locationMove(Cell::Coordinates _loc, CellMembrane::Side _side);
+                      AntibodyStrength _strength, Stats::Ptr _stats);
+  Cell::Coordinates translatedLoc(Cell::Coordinates _loc, CellMembrane::Side _side);
+  CellMembrane::Side reversedSide(CellMembrane::Side _loc);
 };
 
 #endif

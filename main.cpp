@@ -53,7 +53,7 @@ void dispatchLine(char *textLine, Simulation &simulation) {
     }
 
     if (strcmp(action, "cloneCellsNew") == 0) {
-      simulation.cloneCells(tissueName, parseSide());
+      simulation.clonedCellsAre(tissueName, parseSide());
       return;
     }
 
@@ -81,7 +81,7 @@ void dispatchLine(char *textLine, Simulation &simulation) {
     CellMembrane::Side side = parseSide();
 
     if (strcmp(action, "cloneNew") == 0) {
-      simulation.cloneCell(tissueName, location, side);
+      simulation.clonedCellIs(tissueName, location, side);
     } else if (strcmp(action, "membrane") == 0) {
       strtok(NULL, " "); // Skip the superfluous "antibodyStrengthIs" directive
       simulation.antibodyStrengthIs(tissueName, location, side, parseStrength());

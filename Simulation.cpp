@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <queue>
 #include <stdexcept>
 #include <stdlib.h>
 #include "Simulation.h"
@@ -20,7 +21,7 @@ void Simulation::tissueIs(Fwk::String _tissueName) {
   Tissue::Ptr newTissue(Tissue::TissueNew(_tissueName));   
   tissues_.push_back(newTissue); 
 
-  Stats::Ptr stats= Stats::StatsNew(newTissue);
+  Stats::Ptr stats = Stats::StatsNew(newTissue);
   statuses_.push_back(stats);
 }
 
@@ -35,13 +36,50 @@ void Simulation::cellIs(Fwk::String _tissueName, Cell::CellType _type,
 }
 
 bool Simulation::infectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
-                                AntibodyStrength _strength) {
+                                AntibodyStrength _strength, Stats::Ptr _stats) {
+  cout << "Infected" << _cell->name() << endl;                          
+  if (_cell->health() == Cell::infected_) return false;
+  _stats->attemptsIs(_stats->attempts() + 1);
+
+  int strengthDiff = _strength.value() - _cell->membrane(_side)->antibodyStrength().value();
+  _stats->strengthDiffIs(_stats->strengthDiff() + strengthDiff);
+  if (strengthDiff <= 0) return false;
+
+  cout << "Success!" << endl;
+  _cell->healthIs(Cell::infected_);
+  _stats->infectedIs(_stats->infected() + 1);
   return true;
 }
 
 
 void Simulation::infectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
                              CellMembrane::Side _side, AntibodyStrength _strength) {
+  Tissue::Ptr tissue = Simulation::tissue(_tissueName);
+  if (!tissue.ptr()) return;
+  Cell::Ptr cell = tissue->cell(_loc);
+  if (!cell.ptr()) return;
+
+  Stats::Ptr stats = Simulation::stats(_tissueName);
+  stats->attemptsIs(0);
+  stats->strengthDiffIs(0);
+
+  std::queue<Cell::Ptr> fringe;
+  if (infectedCellIs(cell, _side, _strength, stats))
+    fringe.push(cell);
+
+  while (!fringe.empty()) {
+    cell = fringe.front(); 
+    cout << "Starting infection using " << cell->name() << endl;
+
+    for (int i = SIDE_MIN; i < SIDE_MAX; i++) {
+      CellMembrane::Side side = (CellMembrane::Side) i;
+      Cell::Ptr target = tissue->cell(translatedLoc(cell->location(), side));
+      if (target.ptr() && infectedCellIs(target, reversedSide(side), _strength, stats))
+        fringe.push(target);
+    }
+      
+    fringe.pop();
+  }
 }
 
 void Simulation::infectionDel(Fwk::String _tissueName) {
@@ -55,14 +93,14 @@ void Simulation::infectionDel(Fwk::String _tissueName) {
   }
 }
 
-void Simulation::cloneCell(Fwk::String _tissueName, Cell::Coordinates _loc,
+void Simulation::clonedCellIs(Fwk::String _tissueName, Cell::Coordinates _loc,
                            CellMembrane::Side _side) {
   Tissue::Ptr tissue = Simulation::tissue(_tissueName);
   if (!tissue.ptr()) return;
   Cell::PtrConst cell = tissue->cell(_loc);
   if (!cell.ptr()) return;
 
-  Cell::Coordinates newLoc = locationMove(_loc, _side);
+  Cell::Coordinates newLoc = translatedLoc(_loc, _side);
   cellIs(_tissueName, cell->cellType(), newLoc);
 
   // Copy over antibody strengths
@@ -74,7 +112,7 @@ void Simulation::cloneCell(Fwk::String _tissueName, Cell::Coordinates _loc,
   }
 }
 
-void Simulation::cloneCells (Fwk::String _tissueName, CellMembrane::Side _side) {
+void Simulation::clonedCellsAre(Fwk::String _tissueName, CellMembrane::Side _side) {
   Tissue::Ptr tissue = Simulation::tissue(_tissueName);
   if (!tissue.ptr()) return;
 
@@ -85,7 +123,7 @@ void Simulation::cloneCells (Fwk::String _tissueName, CellMembrane::Side _side) 
 
   for (U32 i = 0; i < cloneLocs.size(); ++i) {
     try {
-      cloneCell(_tissueName, cloneLocs[i], _side);
+      clonedCellIs(_tissueName, cloneLocs[i], _side);
     } catch (...) {
       // No-op, just continue cloning
     }
@@ -155,16 +193,28 @@ Simulation::Stats::Ptr Simulation::stats(Fwk::String _tissueName) {
   return stats;
 }
 
-Cell::Coordinates Simulation::locationMove(Cell::Coordinates _loc, CellMembrane::Side _side) {
+Cell::Coordinates Simulation::translatedLoc(Cell::Coordinates _loc, CellMembrane::Side _side) {
   Cell::Coordinates newLoc = _loc;
   switch (_side) {
     case CellMembrane::north_ : newLoc.y += 1; break;
-    case CellMembrane::south_: newLoc.y -= 1; break;
-    case CellMembrane::east_: newLoc.x += 1; break;
-    case CellMembrane::west_: newLoc.x -= 1; break;
-    case CellMembrane::up_: newLoc.z += 1; break;
-    case CellMembrane::down_: newLoc.z -= 1; break;
+    case CellMembrane::south_ : newLoc.y -= 1; break;
+    case CellMembrane::east_  : newLoc.x += 1; break;
+    case CellMembrane::west_  : newLoc.x -= 1; break;
+    case CellMembrane::up_    : newLoc.z += 1; break;
+    case CellMembrane::down_  : newLoc.z -= 1; break;
     default : throw std::runtime_error("Invalid side");
   }
   return newLoc;
+}
+
+CellMembrane::Side Simulation::reversedSide(CellMembrane::Side _side) {
+  switch (_side) {
+    case CellMembrane::north_ : return CellMembrane::south_;
+    case CellMembrane::south_ : return CellMembrane::north_;
+    case CellMembrane::east_  : return CellMembrane::west_;
+    case CellMembrane::west_  : return CellMembrane::east_;
+    case CellMembrane::up_    : return CellMembrane::down_;
+    case CellMembrane::down_  : return CellMembrane::up_;
+    default : throw std::runtime_error("Invalid side");
+  }
 }
