@@ -77,6 +77,7 @@ class Simulation {
 
  protected:
   vector<Tissue::Ptr> tissues_;
+  vector<Tissue*> tissue_ptrs_;
 
  private:
   bool InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 

@@ -44,7 +44,7 @@ string Simulation::SimulationStats::ToString() {
   results += numLiveCytotoxicCells_ + " ";
   results += numLiveHelperCells_ + " ";
   results += infectionSpread_ + " ";
-  results += longestInfectionPathLength_;
+  results += longestInfectionPathLength_ + "";
   return results;
 }
 
@@ -63,6 +63,7 @@ void Simulation::TissueIs (const Fwk::String _name) {
   Tissue::Ptr tissue(Tissue::TissueNew(_name));
   TissueReactor *m = TissueReactor::TissueReactorIs(tissue.ptr(), this);
   tissues_.push_back(tissue);
+  tissue_ptrs_.push_back(tissue.ptr());
 }
 
 void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type, 
@@ -113,7 +114,7 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   // TODO get the deepest infection path via depth first search
 
   // print out stats after each round
-  cout << stats_.ToString() << endl;
+  cout << "stats:" + stats_.ToString() << endl;
 }
 
 void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
@@ -136,7 +137,8 @@ void Simulation::CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
   Cell::PtrConst cell = (*it)->cell(_loc);
   if (!cell) {
     // TODO(rhau) throw exception;
-    printf("Cell to clone is null.\n");
+    throw "Null cell exception";
+    // printf("Cell to clone is null.\n");
     return;
   }
 
@@ -144,6 +146,7 @@ void Simulation::CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
   Cell::PtrConst existing_cell = (*it)->cell(clone_loc);
   if (existing_cell) {
     // TODO(rhau) throw exception;
+    throw "Existing cell exception";
     printf("Cell already exists in clone location.\n");
     return; 
   }
