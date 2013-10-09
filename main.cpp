@@ -35,10 +35,12 @@ CellMembrane::Side extractSide(const string& side_str) {
   } else if (side_str.compare("down")==0) {
     return CellMembrane::down_;
   } else {
-    // TODO throw exception
+    // TODO catch exception
     throw "Invalid side supplied.";
   }
 }
+
+void executeTissueCommand(std::istringstream& iss)
 
 void executeLine(string line, Simulation simulation) {
   std::string token;
@@ -66,17 +68,41 @@ void executeLine(string line, Simulation simulation) {
       if (!getline(iss, command, ' ')) return;
 
       if (command.compare("cytotoxicCellNew")) {
-
+        simulation.CellIs(tissueName, Cell::cytotoxicCell_);
         return;
       } else if (command.compare("helperCellNew")) {
+        simulation.CellIs(tissueName, Cell::helperCell_);
         return;
       } else if (command.compare("infectionStartLocationIs")) {
+        // get location
+        Cell::Coordinates loc;
+        if (!extractLocation(iss, loc)) {
+          // TODO catch exception
+          throw "Location not found exception";
+          return;
+        }
+
+        // get side 
+        string side_str;
+        if (!getline(iss, side_str, ' ')) return; 
+        CellMembrane::Side side = extractSide(side_str);
+
+        // get strength
+        string strength_str;
+        if (!getline(iss, strength_str, ' ')) return;
+        try {
+          AntibodyStrength strength(atoi(strength_str.c_str()));  
+          simulation.InfectionIs(tissueName, loc, side, strength
+        } catch(...) {
+          return;
+        }
         return;
       } else if (command.compare("infectedCellsDel")) {
         return;
       } else if (command.compare("cloneCellsNew")) {
         return;
       } else {
+        // TODO catch exception
         throw "Unknown Cell New Exception";
         return;
       }
@@ -87,6 +113,7 @@ void executeLine(string line, Simulation simulation) {
     if (!getline(iss, tissueName, ' ')) return; 
     Cell::Coordinates loc;
     if (!extractLocation(iss, loc)) {
+      // TODO catch exception
       throw "Location not found exception";
       return;
     }

@@ -18,40 +18,44 @@ class Simulation {
    public:
     void onCellNew(Cell::Ptr _cell);
 
-    static TissueReactor* TissueReactorIs(Tissue* t) {
-      TissueReactor* tr = new TissueReactor(t);
+    static TissueReactor* TissueReactorIs(Tissue* t, Simulation* s) {
+      TissueReactor* tr = new TissueReactor(t, s);
       return tr;
     }
+
    protected:
-    TissueReactor(Tissue* t) : Tissue::Notifiee() {
+    TissueReactor(Tissue* t, Simulation* s) : Tissue::Notifiee(), owner_(s) {
       notifierIs(t);
     }
+
+   private:
+    Simulation* owner_;
   };
 
   class SimulationStats {
    public:
     SimulationStats();
     ~SimulationStats() {};
-    void incNumInfectedCells() { ++numInfectedCells; }
-    void incNumInfectionAttempts() { ++numInfectionAttempts; }
+    void incNumInfectedCells() { ++numInfectedCells_; }
+    void incNumInfectionAttempts() { ++numInfectionAttempts_; }
     void incTotalDiseaseAndAntibodyStrengthDiff() { 
-      ++totalDiseaseAndAntibodyStrengthDiff;
+      ++totalDiseaseAndAntibodyStrengthDiff_;
     }
-    void incNumLiveCytotoxicCells() { ++numLiveCytotoxicCells; }
-    void incNumLiveHelperCells() { ++numLiveHelperCells; }
-    void incInfectionSpread() { ++infectionSpread; }
-    void incLongestInfectionPathLength() { ++longestInfectionPathLength; }
+    void incNumLiveCytotoxicCells() { ++numLiveCytotoxicCells_; }
+    void incNumLiveHelperCells() { ++numLiveHelperCells_; }
+    void InfectionSpreadIs(U64 _infectionSpread) { infectionSpread_ = _infectionSpread; }
+    void incLongestInfectionPathLength() { ++longestInfectionPathLength_; }
 
     string ToString();
 
    private:
-    U64 numInfectedCells;
-    U32 numInfectionAttempts;
-    U64 totalDiseaseAndAntibodyStrengthDiff;
-    U64 numLiveCytotoxicCells;
-    U64 numLiveHelperCells;
-    U64 infectionSpread;
-    U64 longestInfectionPathLength;
+    U64 numInfectedCells_;
+    U32 numInfectionAttempts_;
+    U64 totalDiseaseAndAntibodyStrengthDiff_;
+    U64 numLiveCytotoxicCells_;
+    U64 numLiveHelperCells_;
+    U64 infectionSpread_;
+    U64 longestInfectionPathLength_;
   };
 
   void TissueIs (const Fwk::String _name);
@@ -66,6 +70,9 @@ class Simulation {
   void CloneCells (Fwk::String _tissueName, CellMembrane::Side _side);
   void AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
       CellMembrane::Side _side, AntibodyStrength _strength);
+
+  void incNumLiveCytotoxicCells() { stats_.incNumLiveCytotoxicCells(); }
+  void incNumLiveHelperCells() { stats_.incNumLiveHelperCells(); }
 
 
  protected:

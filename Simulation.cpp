@@ -12,11 +12,13 @@ void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
     CellMembrane::Side side = static_cast<CellMembrane::Side>(i);
     AntibodyStrength strength(0);
     if (_cell->cellType() == Cell::cytotoxicCell_) {
+      owner_->incNumLiveCytotoxicCells();
       strength.valueIs(99);
     } else if (_cell->cellType() == Cell::helperCell_) {
+      owner_->incNumLiveHelperCells();
       strength.valueIs(0);
     } else {
-      // TODO(rhau) throw exception if not one of those cell types
+      throw "Cell type does not exist";
     }
 
     // create membrane
@@ -27,22 +29,22 @@ void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
 }
 
 Simulation::SimulationStats::SimulationStats() : 
-    numInfectedCells(0), numInfectionAttempts(0),
-    totalDiseaseAndAntibodyStrengthDiff(0),
-    numLiveCytotoxicCells(0), numLiveHelperCells(0),
-    infectionSpread(0), longestInfectionPathLength(0) {
+    numInfectedCells_(0), numInfectionAttempts_(0),
+    totalDiseaseAndAntibodyStrengthDiff_(0),
+    numLiveCytotoxicCells_(0), numLiveHelperCells_(0),
+    infectionSpread_(0), longestInfectionPathLength_(0) {
 }
 
 string Simulation::SimulationStats::ToString() {
   // TODO substitute letters in if values never set
   string results = "";
-  results += numInfectedCells + " ";
-  results += numInfectionAttempts + " ";
-  results += totalDiseaseAndAntibodyStrengthDiff + " ";
-  results += numLiveCytotoxicCells + " ";
-  results += numLiveHelperCells + " ";
-  results += infectionSpread + " ";
-  results += longestInfectionPathLength;
+  results += numInfectedCells_ + " ";
+  results += numInfectionAttempts_ + " ";
+  results += totalDiseaseAndAntibodyStrengthDiff_ + " ";
+  results += numLiveCytotoxicCells_ + " ";
+  results += numLiveHelperCells_ + " ";
+  results += infectionSpread_ + " ";
+  results += longestInfectionPathLength_;
   return results;
 }
 
@@ -59,7 +61,7 @@ void Simulation::TissueIs (const Fwk::String _name) {
   if (it != tissues_.end()) return;
 
   Tissue::Ptr tissue(Tissue::TissueNew(_name));
-  TissueReactor *m = TissueReactor::TissueReactorIs(tissue.ptr());
+  TissueReactor *m = TissueReactor::TissueReactorIs(tissue.ptr(), this);
   tissues_.push_back(tissue);
 }
 
@@ -76,9 +78,15 @@ void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type,
 
 bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
                                 AntibodyStrength _strength) {
-  if (_cell->health() == _cell->infected()) return false;
+  if (_cell->health() == _cell->infected()) {
+    // TODO check if infection attempt includes an already infected cell
+    return false;
+  }
   CellMembrane::Ptr membrane = _cell->membrane(_side);
-  if (_strength <= membrane->antibodyStrength()) return false; 
+  if (_strength <= membrane->antibodyStrength()) {
+    stats_.incNumInfectionAttempts();
+    return false; 
+  }
   _cell->healthIs(_cell->infected());
   stats_.incNumInfectedCells();
   return true;
@@ -86,6 +94,7 @@ bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side,
 
 void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
     CellMembrane::Side _side, AntibodyStrength _strength) {
+  cout << "InfectionIs" << endl;
   std::queue<Cell::Ptr> infectionFringe;
   std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
   CheckTissue(it);
@@ -100,6 +109,11 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
 
     infectionFringe.pop();
   }
+
+  // TODO get the deepest infection path via depth first search
+
+  // print out stats after each round
+  cout << stats_.ToString() << endl;
 }
 
 void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
