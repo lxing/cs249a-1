@@ -32,6 +32,9 @@ public:
   public:
     typedef Fwk::Ptr<Stats> Ptr;
     void onCellNew(Cell::Ptr _cell);
+    void onCellDel(Cell::Ptr _cell);
+    void onCellInfected(Cell::Ptr _cell);
+    void onInfectionAttempt(Cell::Ptr _cell, int _strengthDiff);
     Tissue::Ptr tissue() { return tissue_; };
 
     static Stats::Ptr StatsNew(Tissue::Ptr _tissue) {
@@ -47,9 +50,10 @@ public:
     int helperCount() { return helperCount_; };
     int spread() { return spread_; };
     int pathLength() { return pathLength_; };
-    void infectedIs(int _infected) { infected_ = _infected; };
     void attemptsIs(int _attempts) { attempts_ = _attempts; };
     void strengthDiffIs(int _strengthDiff) { strengthDiff_ = _strengthDiff; };
+    void pathLengthIs(int _pathLength) { pathLength_ = _pathLength; };
+    Fwk::String output();
 
   protected:
     Stats(Tissue::Ptr _tissue): Tissue::Notifiee(),
@@ -81,6 +85,7 @@ protected:
                       AntibodyStrength _strength, Stats::Ptr _stats);
   Cell::Coordinates translatedLoc(Cell::Coordinates _loc, CellMembrane::Side _side);
   CellMembrane::Side reversedSide(CellMembrane::Side _loc);
+  void printStats(Stats::Ptr stats);
 };
 
 #endif

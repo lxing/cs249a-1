@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <queue>
 #include <stdexcept>
 #include <stdlib.h>
@@ -37,17 +36,14 @@ void Simulation::cellIs(Fwk::String _tissueName, Cell::CellType _type,
 
 bool Simulation::infectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
                                 AntibodyStrength _strength, Stats::Ptr _stats) {
-  cout << "Infected" << _cell->name() << endl;                          
   if (_cell->health() == Cell::infected_) return false;
-  _stats->attemptsIs(_stats->attempts() + 1);
 
   int strengthDiff = _strength.value() - _cell->membrane(_side)->antibodyStrength().value();
-  _stats->strengthDiffIs(_stats->strengthDiff() + strengthDiff);
+  _stats->onInfectionAttempt(_cell, strengthDiff); 
   if (strengthDiff <= 0) return false;
 
-  cout << "Success!" << endl;
   _cell->healthIs(Cell::infected_);
-  _stats->infectedIs(_stats->infected() + 1);
+  _stats->onCellInfected(_cell);
   return true;
 }
 
@@ -62,24 +58,40 @@ void Simulation::infectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   Stats::Ptr stats = Simulation::stats(_tissueName);
   stats->attemptsIs(0);
   stats->strengthDiffIs(0);
+  stats->pathLengthIs(0);
 
   std::queue<Cell::Ptr> fringe;
-  if (infectedCellIs(cell, _side, _strength, stats))
+  std::queue<int> pathLengths;
+
+  if (infectedCellIs(cell, _side, _strength, stats)) {
     fringe.push(cell);
+    pathLengths.push(1);
+    stats->pathLengthIs(1);
+  }
 
   while (!fringe.empty()) {
     cell = fringe.front(); 
-    cout << "Starting infection using " << cell->name() << endl;
+    int pathLength = pathLengths.front();
+    stats->pathLengthIs(pathLength);
 
     for (int i = SIDE_MIN; i < SIDE_MAX; i++) {
       CellMembrane::Side side = (CellMembrane::Side) i;
       Cell::Ptr target = tissue->cell(translatedLoc(cell->location(), side));
-      if (target.ptr() && infectedCellIs(target, reversedSide(side), _strength, stats))
+      if (target.ptr() && infectedCellIs(target, reversedSide(side), _strength, stats)) {
         fringe.push(target);
+        pathLengths.push(pathLength + 1);
+      }
     }
       
     fringe.pop();
+    pathLengths.pop();
   }
+
+  cout << stats->output() << endl;
+}
+
+void Simulation::printStats(Stats::Ptr stats) {
+  
 }
 
 void Simulation::infectionDel(Fwk::String _tissueName) {
@@ -142,9 +154,9 @@ void Simulation::antibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates 
 }
 
 
-/*****************/
+/*********/
 /* Stats */
-/*****************/
+/*********/
 
 void Simulation::Stats::onCellNew(Cell::Ptr _cell) {
   AntibodyStrength strength;
@@ -166,6 +178,32 @@ void Simulation::Stats::onCellNew(Cell::Ptr _cell) {
     CellMembrane::Ptr membrane = _cell->membraneNew(MEMBRANE_NAME, side);
     membrane->antibodyStrengthIs(strength); 
   }
+}
+
+void Simulation::Stats::onCellDel(Cell::Ptr _cell) {
+  infected_ -= 1;
+}
+
+void Simulation::Stats::onCellInfected(Cell::Ptr _cell) {
+  infected_ += 1;
+  // Update bounding box
+}
+
+void Simulation::Stats::onInfectionAttempt(Cell::Ptr _cell, int _strengthDiff) {
+  attempts_ += 1;
+  strengthDiff_ += _strengthDiff;
+}
+
+Fwk::String Simulation::Stats::output() {
+  std::stringstream ss;
+  ss << infected_ << " ";
+  ss << attempts_ << " ";
+  ss << strengthDiff_ << " ";
+  ss << cytotoxicCount_ << " ";
+  ss << helperCount_ << " ";
+  ss << spread_ << " ";
+  ss << pathLength_ << " ";
+  return ss.str();
 }
 
 

@@ -30,7 +30,7 @@ CellMembrane::Side parseSide() {
   throw std::runtime_error("Failed to parse side");
 }
 
-// TODO: Handle malformed input
+// TODO: Handle Simulation exceptions
 void dispatchLine(char *textLine, Simulation &simulation) {
 
   char *type = strtok(textLine, " ");
