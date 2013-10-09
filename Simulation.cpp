@@ -20,8 +20,8 @@ void Simulation::tissueIs(Fwk::String _tissueName) {
   Tissue::Ptr newTissue(Tissue::TissueNew(_tissueName));   
   tissues_.push_back(newTissue); 
 
-  TissueReactor::Ptr reactor = TissueReactor::TissueReactorNew(newTissue);
-  reactors_.push_back(reactor);
+  Stats::Ptr stats= Stats::StatsNew(newTissue);
+  statuses_.push_back(stats);
 }
 
 void Simulation::cellIs(Fwk::String _tissueName, Cell::CellType _type, 
@@ -105,14 +105,20 @@ void Simulation::antibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates 
 
 
 /*****************/
-/* TissueReactor */
+/* Stats */
 /*****************/
 
-void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
+void Simulation::Stats::onCellNew(Cell::Ptr _cell) {
   AntibodyStrength strength;
   switch (_cell->cellType()) {
-    case Cell::cytotoxicCell_ : strength.valueIs(100); break;
-    case Cell::helperCell_ : strength.valueIs(0); break;
+    case Cell::cytotoxicCell_ :
+      cytotoxicCount_++;
+      strength.valueIs(100);
+      break;
+    case Cell::helperCell_ :
+      helperCount_++;
+      strength.valueIs(0);
+      break;
     default : throw std::runtime_error("Invalid cell type");
   }
 
@@ -139,14 +145,14 @@ Tissue::Ptr Simulation::tissue(Fwk::String _tissueName) {
   return tissue;
 }
 
-Simulation::TissueReactor::Ptr Simulation::reactor(Fwk::String _tissueName) {
-  TissueReactor::Ptr reactor;
-  for (ReactorList::iterator it = reactors_.begin(); it != reactors_.end(); ++it) {
-    reactor = *it;
-    if (!strcmp(reactor->tissue()->name().c_str(), _tissueName.c_str()))
+Simulation::Stats::Ptr Simulation::stats(Fwk::String _tissueName) {
+  Stats::Ptr stats;
+  for (StatsList::iterator it = statuses_.begin(); it != statuses_.end(); ++it) {
+    stats = *it;
+    if (!strcmp(stats->tissue()->name().c_str(), _tissueName.c_str()))
       break;
   }
-  return reactor;
+  return stats;
 }
 
 Cell::Coordinates Simulation::locationMove(Cell::Coordinates _loc, CellMembrane::Side _side) {

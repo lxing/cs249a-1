@@ -28,54 +28,54 @@ public:
   void antibodyStrengthIs(Fwk::String _tissueName, Cell::Coordinates _loc,
                           CellMembrane::Side _side, AntibodyStrength _strength);
 
-  class TissueReactor : public Tissue::Notifiee {
+  class Stats : public Tissue::Notifiee {
   public:
-    typedef Fwk::Ptr<TissueReactor> Ptr;
+    typedef Fwk::Ptr<Stats> Ptr;
     void onCellNew(Cell::Ptr _cell);
     Tissue::Ptr tissue() { return tissue_; };
 
-    static TissueReactor::Ptr TissueReactorNew(Tissue::Ptr _tissue) {
-      TissueReactor::Ptr reactor = new TissueReactor(_tissue);
-      reactor->referencesDec(1);
-      return reactor;
+    static Stats::Ptr StatsNew(Tissue::Ptr _tissue) {
+      Stats::Ptr stats = new Stats(_tissue);
+      stats->referencesDec(1);
+      return stats;
     };
 
-    U32 infected() { return infected_; };
-    U32 attempts() { return attempts_; };
-    U32 strengthDiff() { return strengthDiff_; };
-    U32 cytotoxicCount() { return cytotoxicCount_; };
-    U32 helperCount() { return helperCount_; };
-    U32 spread() { return spread_; };
-    U32 pathLength() { return pathLength_; };
-    void infectedInc(U32 val) { infected_ += val; };
-    void attemptsInc(U32 val) { attempts_ += val; };
-    void cytotoxicCountInc(U32 val) { cytotoxicCount_ += val; };
-    void helperCountInc(U32 val) { helperCount_ += val; };
+    int infected() { return infected_; };
+    int attempts() { return attempts_; };
+    int strengthDiff() { return strengthDiff_; };
+    int cytotoxicCount() { return cytotoxicCount_; };
+    int helperCount() { return helperCount_; };
+    int spread() { return spread_; };
+    int pathLength() { return pathLength_; };
+    void infectedInc(int val) { infected_ += val; };
+    void attemptsInc(int val) { attempts_ += val; };
+    void cytotoxicCountInc(int val) { cytotoxicCount_ += val; };
+    void helperCountInc(int val) { helperCount_ += val; };
 
   protected:
-    TissueReactor(Tissue::Ptr _tissue) : Tissue::Notifiee() {
+    Stats(Tissue::Ptr _tissue) : Tissue::Notifiee() {
       tissue_ = _tissue;
       notifierIs(_tissue);
     }
 
-    U32 infected_;
-    U32 attempts_;
-    U32 strengthDiff_;
-    U32 cytotoxicCount_;
-    U32 helperCount_;
-    U32 spread_;
-    U32 pathLength_;
+    int infected_;
+    int attempts_;
+    int strengthDiff_;
+    int cytotoxicCount_;
+    int helperCount_;
+    int spread_;
+    int pathLength_;
     Tissue::Ptr tissue_;
   };
 
-  typedef std::vector<TissueReactor::Ptr> ReactorList;
+  typedef std::vector<Stats::Ptr> StatsList;
 
   Tissue::Ptr tissue(Fwk::String _tissueName);
-  TissueReactor::Ptr reactor(Fwk::String _tissueName);
+  Stats::Ptr stats(Fwk::String _tissueName);
 
 protected:
   TissueList tissues_;
-  ReactorList reactors_;
+  StatsList statuses_;
 
   bool infectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
                       AntibodyStrength _strength);
