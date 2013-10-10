@@ -48,7 +48,6 @@ string Simulation::SimulationStats::ToString() {
      << numLiveHelperCells_ << " " // e
      << infectionSpread_ << " " // f
      << longestInfectionPathLength_; // g
-  cout << ss.str() << endl;
   return ss.str();
 }
 
@@ -117,7 +116,6 @@ bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side,
     stats_.incNumInfectionAttempts();
     return false; 
   }
-  cout << membrane->antibodyStrength() << endl;
   _cell->healthIs(_cell->infected());
   stats_.incNumInfectedCells();
   stats_.UpdateSpread(_cell->location());
@@ -247,7 +245,6 @@ void Simulation::AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates 
   // TODO(rhau) verify that cell exists
   CellMembrane::Ptr membrane = cell->membrane(_side);
   membrane->antibodyStrengthIs(_strength);
-  cout << membrane->antibodyStrength() << endl;
 }
 
 std::vector<Tissue::Ptr>::iterator Simulation::GetTissue(
