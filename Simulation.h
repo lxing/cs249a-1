@@ -113,6 +113,7 @@ class Simulation {
   std::vector<Tissue::Ptr>::iterator GetTissue (const Fwk::String _name);
   void CheckTissue (const std::vector<Tissue::Ptr>::iterator it);
   Cell::Coordinates GetCellLocation(Cell::Coordinates _loc, CellMembrane::Side _side);
+  CellMembrane::Side oppositeSide(CellMembrane::Side side);
 
   SimulationStats stats_;
 };

@@ -12,10 +12,10 @@ void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
     CellMembrane::Side side = static_cast<CellMembrane::Side>(i);
     AntibodyStrength strength(0);
     if (_cell->cellType() == Cell::cytotoxicCell_) {
-      owner_->incNumLiveCytotoxicCells();
-      strength.valueIs(99);
+      if (i==0) owner_->incNumLiveCytotoxicCells();
+      strength.valueIs(100);
     } else if (_cell->cellType() == Cell::helperCell_) {
-      owner_->incNumLiveHelperCells();
+      if (i==0)  owner_->incNumLiveHelperCells();
       strength.valueIs(0);
     } else {
       printf("cell type did not exist\n");
@@ -41,13 +41,13 @@ string Simulation::SimulationStats::ToString() {
 
   // TODO substitute letters in if values never set
   std::stringstream ss;
-  ss << numInfectedCells_ << " "
-     << numInfectionAttempts_ << " "
-     << totalDiseaseAndAntibodyStrengthDiff_ << " "
-     << numLiveCytotoxicCells_ << " "
-     << numLiveHelperCells_ << " "
-     << infectionSpread_ << " "
-     << longestInfectionPathLength_;
+  ss << numInfectedCells_ << " " // a
+     << numInfectionAttempts_ << " "  // b
+     << totalDiseaseAndAntibodyStrengthDiff_ << " " // c
+     << numLiveCytotoxicCells_ << " " // d
+     << numLiveHelperCells_ << " " // e
+     << infectionSpread_ << " " // f
+     << longestInfectionPathLength_; // g
   cout << ss.str() << endl;
   return ss.str();
 }
@@ -117,6 +117,7 @@ bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side,
     stats_.incNumInfectionAttempts();
     return false; 
   }
+  cout << membrane->antibodyStrength() << endl;
   _cell->healthIs(_cell->infected());
   stats_.incNumInfectedCells();
   stats_.UpdateSpread(_cell->location());
@@ -127,30 +128,39 @@ bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side,
 void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
     CellMembrane::Side _side, AntibodyStrength _strength) {
   stats_.RootLocIs(_loc);
-  std::queue<Cell::Ptr> infectionFringe;
-  std::queue<Cell::Ptr> nextInfectionFringe;
+  
+  std::queue<Cell::Ptr> infectionFringe1;
+  std::queue<Cell::Ptr> infectionFringe2;
+  std::queue<Cell::Ptr>* currFringe = &infectionFringe1;
+  std::queue<Cell::Ptr>* nextFringe = &infectionFringe2;
+
   std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
   CheckTissue(it);
   Tissue::Ptr tissue = (*it);
 
   Cell::Ptr cell = tissue->cell(_loc);
   if (!InfectedCellIs(cell, _side, _strength)) return;
-  infectionFringe.push(cell);
+  currFringe->push(cell);
 
-  while (!infectionFringe.empty()) {
-    cell = infectionFringe.front(); 
+  while (!(currFringe->empty() && nextFringe->empty())) {
+    stats_.incLongestInfectionPathLength();
+    while (!currFringe->empty()) {
+      cell = currFringe->front(); 
 
-    for (int i=0; i<6; i++) {
-      CellMembrane::Side side = static_cast<CellMembrane::Side>(i);
-      Cell::Coordinates next_loc = GetCellLocation(cell->location(), side);
-      Cell::Ptr next_cell = tissue->cell(next_loc);
-      if (InfectedCellIs(cell, side, _strength) &&
-          next_cell.ptr() != NULL) {
-        infectionFringe.push(next_cell);
+      for (int i=0; i<6; i++) {
+        CellMembrane::Side side = static_cast<CellMembrane::Side>(i);
+        Cell::Coordinates next_loc = GetCellLocation(cell->location(), side);
+        Cell::Ptr next_cell = tissue->cell(next_loc);
+        if (next_cell.ptr() != NULL &&
+            next_cell->health() != Cell::infected_ &&
+            InfectedCellIs(next_cell, oppositeSide(side), _strength)) {
+          nextFringe->push(next_cell);
+        }
       }
+      currFringe->pop();
     }
 
-    infectionFringe.pop();
+    swap(*currFringe, *nextFringe);
   }
 
   // print out stats after each round
@@ -190,6 +200,20 @@ void Simulation::CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
   }
 
   CellIs((*it)->name(), cell->cellType(), clone_loc);
+  Cell::Ptr cloned_cell = (*it)->cell(clone_loc);
+  if (!cell) {
+    cout <<"Cell clone failed." << endl;
+    throw "Null cloned cell exception";
+    return;
+  }
+
+  // update membrane strengths
+  for (int i=0; i<6; i++) {
+    CellMembrane::Side side = static_cast<CellMembrane::Side>(i);
+    AntibodyStrength strength = cell->membrane(side)->antibodyStrength();
+    CellMembrane::Ptr membrane = cloned_cell->membrane(side);
+    membrane->antibodyStrengthIs(strength); 
+  }
 }
 
 void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) {
@@ -223,6 +247,7 @@ void Simulation::AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates 
   // TODO(rhau) verify that cell exists
   CellMembrane::Ptr membrane = cell->membrane(_side);
   membrane->antibodyStrengthIs(_strength);
+  cout << membrane->antibodyStrength() << endl;
 }
 
 std::vector<Tissue::Ptr>::iterator Simulation::GetTissue(
@@ -268,4 +293,21 @@ Cell::Coordinates Simulation::GetCellLocation(Cell::Coordinates _loc, CellMembra
   }
 
   return clone_loc;
+}
+
+CellMembrane::Side Simulation::oppositeSide(CellMembrane::Side side) {
+  if (side == CellMembrane::north_) {
+    return CellMembrane::south_;
+  }
+  if (side == CellMembrane::south_) {
+    return CellMembrane::north_;
+  }
+  if (side == CellMembrane::east_) {
+    return CellMembrane::west_;
+  }
+  if (side == CellMembrane::west_) {
+    return CellMembrane::east_;
+  }
+
+  throw "side not found exception";
 }
