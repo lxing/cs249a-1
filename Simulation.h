@@ -1,6 +1,7 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
 
+#include <cmath>
 #include <vector>
 
 #include "fwk/Ptr.h"
@@ -43,12 +44,25 @@ class Simulation {
     }
     void incNumLiveCytotoxicCells() { ++numLiveCytotoxicCells_; }
     void incNumLiveHelperCells() { ++numLiveHelperCells_; }
-    void InfectionSpreadIs(U64 _infectionSpread) { infectionSpread_ = _infectionSpread; }
     void incLongestInfectionPathLength() { ++longestInfectionPathLength_; }
 
+    void RootLocIs(Cell::Coordinates _root_loc) {
+      root_loc_ = _root_loc;
+      north_loc_ = _root_loc;
+      south_loc_ = _root_loc;
+      east_loc_ = _root_loc;
+      west_loc_ = _root_loc;
+      top_loc_ = _root_loc;
+      bottom_loc_ = _root_loc;
+    }
+
+    void UpdateSpread(Cell::Coordinates _loc);
+    void UpdatePathLength(Cell::Coordinates _loc);
     string ToString();
 
    private:
+    void CalculateInfectionSpread();
+
     U64 numInfectedCells_;
     U32 numInfectionAttempts_;
     U64 totalDiseaseAndAntibodyStrengthDiff_;
@@ -56,6 +70,20 @@ class Simulation {
     U64 numLiveHelperCells_;
     U64 infectionSpread_;
     U64 longestInfectionPathLength_;
+
+    Cell::Coordinates root_loc_;
+    Cell::Coordinates north_loc_;
+    Cell::Coordinates south_loc_;
+    Cell::Coordinates east_loc_;
+    Cell::Coordinates west_loc_;
+    Cell::Coordinates top_loc_;
+    Cell::Coordinates bottom_loc_;
+  };
+
+  class PathTracker{
+    
+    Cell::Ptr next_cell;
+    U32 path_length;
   };
 
   void TissueIs (const Fwk::String _name);
@@ -84,7 +112,7 @@ class Simulation {
       AntibodyStrength _strength);
   std::vector<Tissue::Ptr>::iterator GetTissue (const Fwk::String _name);
   void CheckTissue (const std::vector<Tissue::Ptr>::iterator it);
-  Cell::Coordinates GetCloneLocation(Cell::Coordinates _loc, CellMembrane::Side _side);
+  Cell::Coordinates GetCellLocation(Cell::Coordinates _loc, CellMembrane::Side _side);
 
   SimulationStats stats_;
 };

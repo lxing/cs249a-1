@@ -18,6 +18,7 @@ void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
       owner_->incNumLiveHelperCells();
       strength.valueIs(0);
     } else {
+      printf("cell type did not exist\n");
       throw "Cell type does not exist";
     }
 
@@ -36,16 +37,44 @@ Simulation::SimulationStats::SimulationStats() :
 }
 
 string Simulation::SimulationStats::ToString() {
+  CalculateInfectionSpread();
+
   // TODO substitute letters in if values never set
-  string results = "";
-  results += numInfectedCells_ + " ";
-  results += numInfectionAttempts_ + " ";
-  results += totalDiseaseAndAntibodyStrengthDiff_ + " ";
-  results += numLiveCytotoxicCells_ + " ";
-  results += numLiveHelperCells_ + " ";
-  results += infectionSpread_ + " ";
-  results += longestInfectionPathLength_ + "";
-  return results;
+  std::stringstream ss;
+  ss << numInfectedCells_ << " "
+     << numInfectionAttempts_ << " "
+     << totalDiseaseAndAntibodyStrengthDiff_ << " "
+     << numLiveCytotoxicCells_ << " "
+     << numLiveHelperCells_ << " "
+     << infectionSpread_ << " "
+     << longestInfectionPathLength_;
+  cout << ss.str() << endl;
+  return ss.str();
+}
+
+void Simulation::SimulationStats::UpdateSpread(Cell::Coordinates _loc) {
+  if (_loc.y > north_loc_.y) north_loc_ = _loc;
+  if (_loc.y < south_loc_.y) south_loc_ = _loc;
+
+  if (_loc.y > east_loc_.x) east_loc_ = _loc;
+  if (_loc.y < west_loc_.y) west_loc_ = _loc;
+
+  if (_loc.y > top_loc_.z) top_loc_ = _loc;
+  if (_loc.y < north_loc_.z) bottom_loc_ = _loc;
+}
+
+void Simulation::SimulationStats::UpdatePathLength(Cell::Coordinates _loc) {
+  U64 distance = abs(_loc.x - root_loc_.x)
+    + abs(_loc.y - root_loc_.y)
+    + abs(_loc.z - root_loc_.z);
+  longestInfectionPathLength_ = distance;
+}
+
+void Simulation::SimulationStats::CalculateInfectionSpread() {
+  U64 height = abs(north_loc_.y - south_loc_.y) + 1;
+  U64 width = abs(east_loc_.x - west_loc_.x) + 1;
+  U64 depth = abs(top_loc_.z - bottom_loc_.z) + 1;
+  infectionSpread_ = height * width * depth;
 }
 
 Simulation::Simulation() {
@@ -90,13 +119,16 @@ bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side,
   }
   _cell->healthIs(_cell->infected());
   stats_.incNumInfectedCells();
+  stats_.UpdateSpread(_cell->location());
+  stats_.UpdatePathLength(_cell->location());
   return true;
 }
 
 void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
     CellMembrane::Side _side, AntibodyStrength _strength) {
-  cout << "InfectionIs" << endl;
+  stats_.RootLocIs(_loc);
   std::queue<Cell::Ptr> infectionFringe;
+  std::queue<Cell::Ptr> nextInfectionFringe;
   std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
   CheckTissue(it);
   Tissue::Ptr tissue = (*it);
@@ -108,13 +140,21 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   while (!infectionFringe.empty()) {
     cell = infectionFringe.front(); 
 
+    for (int i=0; i<6; i++) {
+      CellMembrane::Side side = static_cast<CellMembrane::Side>(i);
+      Cell::Coordinates next_loc = GetCellLocation(cell->location(), side);
+      Cell::Ptr next_cell = tissue->cell(next_loc);
+      if (InfectedCellIs(cell, side, _strength) &&
+          next_cell.ptr() != NULL) {
+        infectionFringe.push(next_cell);
+      }
+    }
+
     infectionFringe.pop();
   }
 
-  // TODO get the deepest infection path via depth first search
-
   // print out stats after each round
-  cout << "stats:" + stats_.ToString() << endl;
+  cout << stats_.ToString() << endl;
 }
 
 void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
@@ -136,18 +176,16 @@ void Simulation::CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
 
   Cell::PtrConst cell = (*it)->cell(_loc);
   if (!cell) {
-    // TODO(rhau) throw exception;
+    cout <<"Cell to clone is null." << endl;
     throw "Null cell exception";
-    // printf("Cell to clone is null.\n");
     return;
   }
 
-  Cell::Coordinates clone_loc = GetCloneLocation(_loc, _side);
+  Cell::Coordinates clone_loc = GetCellLocation(_loc, _side);
   Cell::PtrConst existing_cell = (*it)->cell(clone_loc);
   if (existing_cell) {
-    // TODO(rhau) throw exception;
-    throw "Existing cell exception";
     printf("Cell already exists in clone location.\n");
+    throw "Existing cell exception";
     return; 
   }
 
@@ -158,7 +196,7 @@ void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) 
   std::vector<Tissue::Ptr>::iterator it = GetTissue(_tissueName);
   CheckTissue(it);
 
-  // TODO(lxing) fwkHmNext instead of raw iterator
+  // TODO(rhau) fwkHmNext instead of raw iterator
   vector<Cell::Coordinates> clone_locations;
   Tissue::CellIteratorConst cell_iter = (*it)->cellIterConst();
   for (; cell_iter != NULL; ++cell_iter) {
@@ -168,7 +206,11 @@ void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) 
   int i;
   for (; i<clone_locations.size(); i++) {
     Cell::Coordinates coord = clone_locations[i];
-    CloneCell(_tissueName, coord, _side);        
+    try {
+      CloneCell(_tissueName, coord, _side);        
+    } catch (...) {
+      cout << "caught clone cell exception" << endl;
+    }
   }
 }
 
@@ -202,11 +244,12 @@ void Simulation::CheckTissue(
     printf("Tissue did not exist.\n");
     // TODO(rhau) change the asserts to throw exceptions instead
     assert(it != tissues_.end());
+    throw "Tissue did not exist exception";
     return;
   }
 }
 
-Cell::Coordinates Simulation::GetCloneLocation(Cell::Coordinates _loc, CellMembrane::Side _side) {
+Cell::Coordinates Simulation::GetCellLocation(Cell::Coordinates _loc, CellMembrane::Side _side) {
   Cell::Coordinates clone_loc = _loc;
   if (_side == CellMembrane::north_) {
     clone_loc.y += 1;
@@ -221,7 +264,7 @@ Cell::Coordinates Simulation::GetCloneLocation(Cell::Coordinates _loc, CellMembr
   } else if (_side == CellMembrane::down_) {
     clone_loc.z -= 1;
   } else {
-    // TODO(rhau) throw exceptioin
+    throw "Location not found exception";
   }
 
   return clone_loc;
