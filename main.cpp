@@ -15,9 +15,9 @@ bool extractLocation(std::istringstream& iss, Cell::Coordinates& _loc) {
   if (!getline(iss, x, ' ')) return false;
   if (!getline(iss, y, ' ')) return false;
   if (!getline(iss, z, ' ')) return false;
-  _loc.x = x[0] - '0';
-  _loc.y = y[0] - '0';
-  _loc.z = z[0] - '0';
+  _loc.x = atoi(x.c_str());
+  _loc.y = atoi(y.c_str());
+  _loc.z = atoi(z.c_str());
   return true;
 }
 
