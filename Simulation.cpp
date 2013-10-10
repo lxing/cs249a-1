@@ -139,7 +139,7 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   Tissue::Ptr tissue = (*it);
 
   Cell::Ptr cell = tissue->cell(_loc);
-  if (!InfectedCellIs(cell, _side, _strength)) return;
+  if (!cell.ptr() || !InfectedCellIs(cell, _side, _strength)) return;
   currFringe->push(cell);
 
   while (!(currFringe->empty() && nextFringe->empty())) {
