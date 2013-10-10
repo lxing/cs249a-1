@@ -109,11 +109,14 @@ bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side,
                                 AntibodyStrength _strength) {
   if (_cell->health() == _cell->infected()) {
     // TODO check if infection attempt includes an already infected cell
-    return false;
+    return true;
   }
+
   CellMembrane::Ptr membrane = _cell->membrane(_side);
+  stats_.incTotalDiseaseAndAntibodyStrengthDiff(
+      (int)_strength.value() - (int)membrane->antibodyStrength().value());
+  stats_.incNumInfectionAttempts();
   if (_strength <= membrane->antibodyStrength()) {
-    stats_.incNumInfectionAttempts();
     return false; 
   }
   _cell->healthIs(_cell->infected());
@@ -137,7 +140,21 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   Tissue::Ptr tissue = (*it);
 
   Cell::Ptr cell = tissue->cell(_loc);
-  if (!cell.ptr() || !InfectedCellIs(cell, _side, _strength)) return;
+  if (!cell.ptr() || !InfectedCellIs(cell, _side, _strength)) {
+    if (!cell.ptr()) {
+      cout << "cell null:" << 
+             _loc.x << " " <<
+             _loc.y << " " <<
+             _loc.z << endl;  
+    } else {
+      cout << "cell infected:" << 
+             _loc.x << " " <<
+             _loc.y << " " <<
+             _loc.z << endl;  
+    }
+    
+    return;
+  }
   currFringe->push(cell);
 
   while (!(currFringe->empty() && nextFringe->empty())) {
@@ -172,7 +189,13 @@ void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
   // TODO(lxing) fwkHmNext instead of raw iterator
   Tissue::CellIteratorConst cell_iter = (*it)->cellIterConst();
   for ( ; cell_iter != NULL; ++cell_iter) {
-    (*it)->cellDel((*cell_iter)->location().name());
+    if ((*cell_iter)->health() == Cell::infected_) {
+      // cout << "Deleting:"
+      //      << (*cell_iter)->location().x << " "
+      //      << (*cell_iter)->location().y << " "
+      //      << (*cell_iter)->location().z << endl; 
+      (*it)->cellDel((*cell_iter)->location().name());  
+    }
   }
 }
 
@@ -192,7 +215,10 @@ void Simulation::CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
   Cell::Coordinates clone_loc = GetCellLocation(_loc, _side);
   Cell::PtrConst existing_cell = (*it)->cell(clone_loc);
   if (existing_cell) {
-    printf("Cell already exists in clone location.\n");
+    // cout << "Cell already exists in clone location:" 
+    //      << _loc.x << " "
+    //      << _loc.y << " "
+    //      << _loc.z << endl;
     throw "Existing cell exception";
     return; 
   }
@@ -225,14 +251,16 @@ void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) 
     clone_locations.push_back((*cell_iter)->location());
   }
 
-  int i;
-  for (; i<clone_locations.size(); i++) {
+  // cout << "beginning clone cells" << _side << endl;
+  for (int i=0; i<clone_locations.size(); ++i) {
     Cell::Coordinates coord = clone_locations[i];
+    // cout << "cloning loc:"
+    //      << coord.x << " "
+    //      << coord.y << " "
+         // << coord.z << endl;
     try {
       CloneCell(_tissueName, coord, _side);        
-    } catch (...) {
-      cout << "caught clone cell exception" << endl;
-    }
+    } catch (...) { }
   }
 }
 

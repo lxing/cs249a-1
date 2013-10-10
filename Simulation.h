@@ -39,8 +39,8 @@ class Simulation {
     ~SimulationStats() {};
     void incNumInfectedCells() { ++numInfectedCells_; }
     void incNumInfectionAttempts() { ++numInfectionAttempts_; }
-    void incTotalDiseaseAndAntibodyStrengthDiff() { 
-      ++totalDiseaseAndAntibodyStrengthDiff_;
+    void incTotalDiseaseAndAntibodyStrengthDiff(int diff) { 
+      totalDiseaseAndAntibodyStrengthDiff_ += diff;
     }
     void incNumLiveCytotoxicCells() { ++numLiveCytotoxicCells_; }
     void incNumLiveHelperCells() { ++numLiveHelperCells_; }
@@ -65,7 +65,7 @@ class Simulation {
 
     U64 numInfectedCells_;
     U32 numInfectionAttempts_;
-    U64 totalDiseaseAndAntibodyStrengthDiff_;
+    int totalDiseaseAndAntibodyStrengthDiff_;
     U64 numLiveCytotoxicCells_;
     U64 numLiveHelperCells_;
     U64 infectionSpread_;
