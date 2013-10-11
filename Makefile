@@ -12,4 +12,4 @@ clean:
 
 Simulation.o: Simulation.cpp Simulation.h
 Tissue.o: Tissue.cpp Tissue.h
-main.o: main.cpp
+main.o: main.cpp dispatch.cpp
