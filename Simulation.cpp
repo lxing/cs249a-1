@@ -186,7 +186,11 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   Tissue::Ptr tissue = (*it);
 
   Cell::Ptr cell = tissue->cell(_loc);
-  if (!cell.ptr() || !InfectedCellIs(_tissueName, cell, _side, _strength)) {    
+  if (!cell.ptr() || cell->health()==cell->infected() || 
+      !InfectedCellIs(_tissueName, cell, _side, _strength)) {
+    // print out stats after each round
+    cout << stats_map_[_tissueName]->ToString() << endl;
+    stats_map_[_tissueName]->ResetInfectionStats();    
     return;
   }
   currFringe->push(cell);
@@ -194,6 +198,7 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   while (!(currFringe->empty() && nextFringe->empty())) {
     stats_map_[_tissueName]->incLongestInfectionPathLength();
     while (!currFringe->empty()) {
+
       cell = currFringe->front(); 
 
       for (int i=0; i<6; i++) {
@@ -208,7 +213,11 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
       }
       currFringe->pop();
     }
-
+    // cout << nextFringe->size() << endl;
+    if (nextFringe->size() > 0) {
+      // stats_map_[_tissueName]->incLongestInfectionPathLength();  
+    }
+    
     swap(*currFringe, *nextFringe);
   }
 
