@@ -73,7 +73,12 @@ void dispatchLine(char *textLine, Simulation &simulation) {
     } else {
       throw std::runtime_error("Failed to parse action");
     }
-    simulation.cellIs(tissueName, cellType, location);
+
+    try {
+      simulation.cellIs(tissueName, cellType, location);
+    } catch (...) {
+      // Continue on
+    }
   } else if (strcmp(type, "Cell") == 0) {
     char *tissueName = strtok(NULL, " ");
     Cell::Coordinates location = parseLocation();
@@ -81,7 +86,11 @@ void dispatchLine(char *textLine, Simulation &simulation) {
     CellMembrane::Side side = parseSide();
 
     if (strcmp(action, "cloneNew") == 0) {
-      simulation.clonedCellIs(tissueName, location, side);
+      try {
+        simulation.clonedCellIs(tissueName, location, side);
+      } catch (...) {
+        // Continue on
+      }
     } else if (strcmp(action, "membrane") == 0) {
       strtok(NULL, " "); // Skip the superfluous "antibodyStrengthIs" directive
       simulation.antibodyStrengthIs(tissueName, location, side, parseStrength());
