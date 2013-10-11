@@ -37,6 +37,7 @@ class Simulation {
    public:
     SimulationStats();
     ~SimulationStats() {};
+    void Reset();
     void incNumInfectedCells() { ++numInfectedCells_; }
     void incNumInfectionAttempts() { ++numInfectionAttempts_; }
     void incTotalDiseaseAndAntibodyStrengthDiff(int diff) { 
@@ -46,15 +47,7 @@ class Simulation {
     void incNumLiveHelperCells() { ++numLiveHelperCells_; }
     void incLongestInfectionPathLength() { ++longestInfectionPathLength_; }
 
-    void RootLocIs(Cell::Coordinates _root_loc) {
-      root_loc_ = _root_loc;
-      north_loc_ = _root_loc;
-      south_loc_ = _root_loc;
-      east_loc_ = _root_loc;
-      west_loc_ = _root_loc;
-      top_loc_ = _root_loc;
-      bottom_loc_ = _root_loc;
-    }
+    void RootLocIs(Cell::Coordinates _root_loc);
 
     void UpdateSpread(Cell::Coordinates _loc);
     void UpdatePathLength(Cell::Coordinates _loc);

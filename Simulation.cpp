@@ -36,6 +36,14 @@ Simulation::SimulationStats::SimulationStats() :
     infectionSpread_(0), longestInfectionPathLength_(0) {
 }
 
+void Simulation::SimulationStats::Reset() {
+  numInfectedCells_ = 0;
+  numInfectionAttempts_ = 0;
+  totalDiseaseAndAntibodyStrengthDiff_ = 0;
+  infectionSpread_ = 0;
+  longestInfectionPathLength_ = 0;
+}
+
 string Simulation::SimulationStats::ToString() {
   CalculateInfectionSpread();
 
@@ -51,12 +59,22 @@ string Simulation::SimulationStats::ToString() {
   return ss.str();
 }
 
+void Simulation::SimulationStats::RootLocIs(Cell::Coordinates _root_loc) {
+  root_loc_ = _root_loc;
+  north_loc_ = _root_loc;
+  south_loc_ = _root_loc;
+  east_loc_ = _root_loc;
+  west_loc_ = _root_loc;
+  top_loc_ = _root_loc;
+  bottom_loc_ = _root_loc;
+}
+
 void Simulation::SimulationStats::UpdateSpread(Cell::Coordinates _loc) {
   if (_loc.y > north_loc_.y) north_loc_ = _loc;
   if (_loc.y < south_loc_.y) south_loc_ = _loc;
 
-  if (_loc.y > east_loc_.x) east_loc_ = _loc;
-  if (_loc.y < west_loc_.y) west_loc_ = _loc;
+  if (_loc.x > east_loc_.x) east_loc_ = _loc;
+  if (_loc.x < west_loc_.x) west_loc_ = _loc;
 
   if (_loc.y > top_loc_.z) top_loc_ = _loc;
   if (_loc.y < north_loc_.z) bottom_loc_ = _loc;
@@ -113,13 +131,16 @@ bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side,
   }
 
   CellMembrane::Ptr membrane = _cell->membrane(_side);
+  
   stats_.incTotalDiseaseAndAntibodyStrengthDiff(
       (int)_strength.value() - (int)membrane->antibodyStrength().value());
   stats_.incNumInfectionAttempts();
+
   if (_strength <= membrane->antibodyStrength()) {
     return false; 
   }
   _cell->healthIs(_cell->infected());
+
   stats_.incNumInfectedCells();
   stats_.UpdateSpread(_cell->location());
   stats_.UpdatePathLength(_cell->location());
@@ -180,6 +201,7 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
 
   // print out stats after each round
   cout << stats_.ToString() << endl;
+  stats_.Reset();
 }
 
 void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
@@ -332,6 +354,12 @@ CellMembrane::Side Simulation::oppositeSide(CellMembrane::Side side) {
   }
   if (side == CellMembrane::west_) {
     return CellMembrane::east_;
+  }
+  if (side == CellMembrane::up_) {
+    return CellMembrane::up_;
+  }
+  if (side == CellMembrane::down_) {
+    return CellMembrane::down_;
   }
 
   throw "side not found exception";
