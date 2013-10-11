@@ -43,12 +43,31 @@ public:
       return stats;
     };
 
+    class BoundingBox {
+    public:
+      int spread() { return (max_.x - min_.x) * (max_.y - min_.y) * (max_.z - min_.z); };
+      void limitIs(Cell::Ptr _cell);
+      BoundingBox() {
+        max_.x = 0; // 1 + the actual maximum coordinate
+        max_.y = 0;
+        max_.z = 0;
+        min_.x = 0; // the actual min_imum coordinate
+        min_.y = 0;
+        min_.z = 0;
+      };
+
+    protected:
+      Cell::Coordinates max_;
+      Cell::Coordinates min_;
+    };
+    
+
     int infected() { return infected_; };
     int attempts() { return attempts_; };
     int strengthDiff() { return strengthDiff_; };
     int cytotoxicCount() { return cytotoxicCount_; };
     int helperCount() { return helperCount_; };
-    int spread() { return spread_; };
+    int spread() { return 0; };
     int pathLength() { return pathLength_; };
     void attemptsIs(int _attempts) { attempts_ = _attempts; };
     void strengthDiffIs(int _strengthDiff) { strengthDiff_ = _strengthDiff; };
@@ -56,20 +75,21 @@ public:
     Fwk::String output();
 
   protected:
-    Stats(Tissue::Ptr _tissue): Tissue::Notifiee(),
+    Stats(Tissue::Ptr _tissue) : Tissue::Notifiee(),
         infected_(0),attempts_(0),strengthDiff_(0),cytotoxicCount_(0),
-        helperCount_(0),spread_(0),pathLength_(0),name_(_tissue->name()) {
+        helperCount_(0),pathLength_(0),name_(_tissue->name()) {
       notifierIs(_tissue);
-    }
+    };
 
     int infected_;
     int attempts_;
     int strengthDiff_;
     int cytotoxicCount_;
     int helperCount_;
-    int spread_;
+    BoundingBox boundingBox_;
     int pathLength_;
     Fwk::String name_;
+
   };
 
   typedef std::vector<Stats::Ptr> StatsList;

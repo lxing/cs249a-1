@@ -181,12 +181,21 @@ void Simulation::Stats::onCellNew(Cell::Ptr _cell) {
 }
 
 void Simulation::Stats::onCellDel(Cell::Ptr _cell) {
-  infected_ -= 1;
+  if (_cell->health() == Cell::infected_) infected_ -= 1;
+  switch (_cell->cellType()) {
+    case Cell::cytotoxicCell_ :
+      cytotoxicCount_--;
+      break;
+    case Cell::helperCell_:
+      helperCount_--;
+      break;
+    default : throw std::runtime_error("Invalid cell type");
+  }
 }
 
 void Simulation::Stats::onCellInfected(Cell::Ptr _cell) {
   infected_ += 1;
-  // Update bounding box
+  boundingBox_.limitIs(_cell);
 }
 
 void Simulation::Stats::onInfectionAttempt(Cell::Ptr _cell, int _strengthDiff) {
@@ -201,11 +210,20 @@ Fwk::String Simulation::Stats::output() {
   ss << strengthDiff_ << " ";
   ss << cytotoxicCount_ << " ";
   ss << helperCount_ << " ";
-  ss << spread_ << " ";
+  ss << boundingBox_.spread()  << " ";
   ss << pathLength_ << " ";
   return ss.str();
 }
 
+void Simulation::Stats::BoundingBox::limitIs(Cell::Ptr _cell) {
+  Cell::Coordinates loc = _cell->location(); 
+  if (loc.x + 1 > max_.x) max_.x = loc.x + 1;
+  if (loc.y + 1 > max_.y) max_.y = loc.y + 1;
+  if (loc.y + 1 > max_.z) max_.z = loc.z + 1;
+  if (loc.y + 1 <  min_.x) min_.x = loc.x;
+  if (loc.y + 1 <  min_.y) min_.y = loc.y;
+  if (loc.y + 1 <  min_.z) min_.z = loc.z;
+}
 
 /**********************/
 /* Simulation Helpers */
