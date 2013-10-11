@@ -225,7 +225,7 @@ Simulation::Stats::Ptr Simulation::stats(Fwk::String _tissueName) {
   Stats::Ptr stats;
   for (StatsList::iterator it = statuses_.begin(); it != statuses_.end(); ++it) {
     stats = *it;
-    if (!strcmp(stats->tissue()->name().c_str(), _tissueName.c_str()))
+    if (!strcmp(stats->name().c_str(), _tissueName.c_str()))
       break;
   }
   return stats;

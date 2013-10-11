@@ -35,7 +35,7 @@ public:
     void onCellDel(Cell::Ptr _cell);
     void onCellInfected(Cell::Ptr _cell);
     void onInfectionAttempt(Cell::Ptr _cell, int _strengthDiff);
-    Tissue::Ptr tissue() { return tissue_; };
+    Fwk::String name() { return name_; };
 
     static Stats::Ptr StatsNew(Tissue::Ptr _tissue) {
       Stats::Ptr stats = new Stats(_tissue);
@@ -58,7 +58,7 @@ public:
   protected:
     Stats(Tissue::Ptr _tissue): Tissue::Notifiee(),
         infected_(0),attempts_(0),strengthDiff_(0),cytotoxicCount_(0),
-        helperCount_(0),spread_(0),pathLength_(0),tissue_(_tissue) {
+        helperCount_(0),spread_(0),pathLength_(0),name_(_tissue->name()) {
       notifierIs(_tissue);
     }
 
@@ -69,7 +69,7 @@ public:
     int helperCount_;
     int spread_;
     int pathLength_;
-    Tissue::Ptr tissue_;
+    Fwk::String name_;
   };
 
   typedef std::vector<Stats::Ptr> StatsList;
