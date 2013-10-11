@@ -1,9 +1,12 @@
 #include "gtest/gtest.h"
+#include "../dispatch.cpp"
 #include "../Simulation.h"
 
+#define EMPTY "Empty"
 #define TISSUE "Tissue1"
 #define MULTI "Tissue2"
 #define INFECTED "Tissue3"
+#define STRENGTH 40 
 #define SIDE_MIN 0
 #define SIDE_MAX 6
 
@@ -46,9 +49,26 @@ protected:
   Simulation sim;
 };
 
-/*********/
-/* Tests */
-/*********/
+class DispatchTest : public ::testing::Test {
+protected:
+  virtual void SetUp() {
+    sim.tissueIs(EMPTY);
+    sim.tissueIs(TISSUE);
+    sim.cellIs(TISSUE, Cell::helperCell_, Loc(0,0,0));
+    cmd = NULL;
+  }
+
+  virtual void TearDown() {
+    if (cmd) free(cmd);
+  }
+
+  Simulation sim;
+  char *cmd;
+};
+
+/*******************/
+/* Test Simulation */
+/*******************/
 
 TEST_F(SimulationTest, TissueIs) {
   Tissue::Ptr tissue = sim.tissue(TISSUE);
@@ -129,7 +149,7 @@ TEST_F(SimulationTest, CellCounts) {
 
   /* Test counts after infect */
   stats = sim.stats(INFECTED);
-  sim.infectionIs(INFECTED, Loc(0,0,0), CellMembrane::north_, 40);
+  sim.infectionIs(INFECTED, Loc(0,0,0), CellMembrane::north_, STRENGTH);
   ASSERT_EQ(stats->infected(), 6);
 
   /* Test counts after infectionDel */
@@ -137,13 +157,12 @@ TEST_F(SimulationTest, CellCounts) {
   ASSERT_EQ(stats->infected(), 0);
   ASSERT_EQ(stats->cytotoxicCount(), 1);
   ASSERT_EQ(stats->helperCount(), 1);
- 
 }
 
 TEST_F(SimulationTest, PerInfectionStats) {
   Stats::Ptr stats = sim.stats(INFECTED);
-  sim.infectionIs(INFECTED, Loc(0,0,0), CellMembrane::north_, 40);
-  ASSERT_EQ(stats->strengthDiff(), 6 * (40 - 0) + 1 * (40 - 100));
+  sim.infectionIs(INFECTED, Loc(0,0,0), CellMembrane::north_, STRENGTH);
+  ASSERT_EQ(stats->strengthDiff(), 6 * (STRENGTH - 0) + 1 * (STRENGTH - 100));
   ASSERT_EQ(stats->pathLength(), 4);
   ASSERT_EQ(stats->spread(), (1 - (-2) + 1) * (1 - 0 + 1) * (1 - 0 + 1));
 
@@ -154,7 +173,61 @@ TEST_F(SimulationTest, PerInfectionStats) {
   sim.cellIs(MULTI, Cell::helperCell_, Loc(0,4,2));
   sim.cellIs(MULTI, Cell::helperCell_, Loc(-1,4,2));
   sim.cellIs(MULTI, Cell::helperCell_, Loc(-1,5,2));
-  sim.infectionIs(MULTI, Loc(0,4,0), CellMembrane::north_, 40);
+  sim.infectionIs(MULTI, Loc(0,4,0), CellMembrane::north_, STRENGTH);
   ASSERT_EQ(stats->spread(), (0 - (-1) + 1) * (5 - 4 + 1) * (2 - 0 + 1));
 }
 
+
+/*****************/
+/* Test Dispatch */
+/*****************/
+
+TEST_F(DispatchTest, TissueNew) {
+  cmd = strdup("Tissue tissueNew newTissue");
+  dispatchLine(sim, cmd);
+  ASSERT_TRUE(sim.tissue("newTissue").ptr());
+}
+
+TEST_F(DispatchTest, CellNew) {
+  cmd = strdup("Tissue Empty cytotoxicCellNew 9 9 9");
+  dispatchLine(sim, cmd);
+  Cell::Ptr cell = sim.tissue("Empty")->cell(Loc(9,9,9));
+  ASSERT_TRUE(cell.ptr());
+  ASSERT_EQ(cell->cellType(), Cell::cytotoxicCell_);
+}
+
+TEST_F(DispatchTest, InfectionStart) {
+  cmd = strdup("Tissue Tissue1 infectionStartLocationIs 0 0 0 east 99");
+  dispatchLine(sim, cmd);
+  Cell::Ptr cell = sim.tissue("Tissue1")->cell(Loc(0,0,0));
+  ASSERT_TRUE(cell.ptr());
+  ASSERT_EQ(cell->health(), Cell::infected_);
+}
+
+TEST_F(DispatchTest, InfectionDel) {
+  Cell::Ptr cell = sim.tissue("Tissue1")->cell(Loc(0,0,0));
+  cell->healthIs(Cell::infected_);
+
+  cmd = strdup("Tissue Tissue1 infectedCellsDel");
+  dispatchLine(sim, cmd);
+  ASSERT_EQ(sim.tissue("Tissue1")->cell(Loc(0,0,0)), NULL);
+}
+
+TEST_F(DispatchTest, CloneNew) {
+  cmd = strdup("Cell Tissue1 0 0 0 cloneNew north");
+  dispatchLine(sim, cmd);
+  ASSERT_TRUE(sim.tissue("Tissue1")->cell(Loc(0,1,0)));
+}
+
+TEST_F(DispatchTest, CloneCellsNew) {
+  cmd = strdup("Tissue Tissue1 cloneCellsNew north");
+  dispatchLine(sim, cmd);
+  ASSERT_TRUE(sim.tissue("Tissue1")->cell(Loc(0,1,0)));
+}
+
+TEST_F(DispatchTest, AntibodyStrengthIs) {
+  cmd = strdup("Cell Tissue1 0 0 0 membrane east antibodyStrengthIs 50");
+  dispatchLine(sim, cmd);
+  Cell::Ptr cell = sim.tissue("Tissue1")->cell(Loc(0,0,0));
+  ASSERT_EQ(cell->membrane(CellMembrane::east_)->antibodyStrength(), 50);
+}

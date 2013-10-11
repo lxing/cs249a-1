@@ -46,7 +46,7 @@ LIBS = $(SRC_PATH)/Tissue.o $(SRC_PATH)/fwk/BaseCollection.o $(SRC_PATH)/fwk/Bas
 # ##################
 # Targets for each file you are testing.
 # ##################
-SimulationTest: SimulationTest.cpp $(SRC_PATH)/Simulation.cpp $(SRC_PATH)/Simulation.h $(SRC_PATH)/Simulation.o $(LIBS)
+SimulationTest: SimulationTest.cpp $(SRC_PATH)/Simulation.cpp $(SRC_PATH)/Simulation.h $(SRC_PATH)/Simulation.o $(SRC_PATH)/dispatch.cpp $(LIBS)
 	$(CXX) $(PREPROCESSOR_FLAGS) $(COMPILER_FLAGS) -c SimulationTest.cpp
 
 # ##################
