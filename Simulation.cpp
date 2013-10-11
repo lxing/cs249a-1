@@ -37,10 +37,10 @@ Simulation::SimulationStats::SimulationStats() :
 }
 
 void Simulation::SimulationStats::Reset() {
-  numInfectedCells_ = 0;
+  // numInfectedCells_ = 0;
   numInfectionAttempts_ = 0;
   totalDiseaseAndAntibodyStrengthDiff_ = 0;
-  infectionSpread_ = 0;
+  // infectionSpread_ = 0;
   longestInfectionPathLength_ = 0;
 }
 
@@ -259,6 +259,11 @@ void Simulation::CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
     AntibodyStrength strength = cell->membrane(side)->antibodyStrength();
     CellMembrane::Ptr membrane = cloned_cell->membrane(side);
     membrane->antibodyStrengthIs(strength); 
+  }
+  // update cell health status
+  cloned_cell->healthIs(cell->health());
+  if (cloned_cell->health() == Cell::infected_) {
+    stats_.incNumInfectedCells();
   }
 }
 
