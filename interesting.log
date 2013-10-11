@@ -1,0 +1,29 @@
+# "Braneworld"
+# https://community.emc.com/servlet/JiveServlet/showImage/38-3165-27359/brane_world.jpg
+Tissue tissueNew Tissue1
+
+Tissue Tissue1 helperCellNew 0 0 0
+Cell Tissue1 0 0 0 membrane north antibodyStrengthIs 100
+Cell Tissue1 0 0 0 membrane south antibodyStrengthIs 100
+
+Tissue Tissue1 infectionStartLocationIs 0 0 1 east 100
+
+Cell Tissue1 0 0 0 cloneNew north
+Cell Tissue1 0 1 0 cloneNew north
+Cell Tissue1 0 2 0 cloneNew north
+Cell Tissue1 0 3 0 cloneNew north
+
+Tissue Tissue1 cloneCellsNew east
+Tissue Tissue1 cloneCellsNew east
+Tissue Tissue1 cloneCellsNew east
+Tissue Tissue1 cloneCellsNew east
+
+Tissue Tissue1 cytotoxicCellNew 2 2 1
+
+Tissue Tissue1 cloneCellsNew up
+Tissue Tissue1 cloneCellsNew up
+
+# Break the link between universes! Except for one cell
+Tissue Tissue1 infectionStartLocationIs 0 0 1 east 100
+
+Tissue Tissue1 infectedCellsDel
