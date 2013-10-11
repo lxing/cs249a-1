@@ -27,7 +27,7 @@ class Simulation {
 
       InfectionSpread();
       ~InfectionSpread() {}
-      
+
       void ResetSpread();
       void UpdateSpread(Cell::Coordinates _loc);
       U64 GetInfectionSpread();
@@ -114,10 +114,6 @@ class Simulation {
   void CloneCells (Fwk::String _tissueName, CellMembrane::Side _side);
   void AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
       CellMembrane::Side _side, AntibodyStrength _strength);
-
-  // void incNumLiveCytotoxicCells() { stats_.incNumLiveCytotoxicCells(); }
-  // void incNumLiveHelperCells() { stats_.incNumLiveHelperCells(); }
-
 
  protected:
   vector<Tissue::Ptr> tissues_;

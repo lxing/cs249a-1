@@ -31,7 +31,7 @@ void SimulationTestSetup(SimulationTester& simulation) {
   coord.x = 0;
   coord.y = 0;
   coord.z = 0;
-  simulation.CellIs(kTestTissueName, Cell::tCell_, coord);
+  simulation.CellIs(kTestTissueName, Cell::helperCell_, coord);
 }
 
 // Tests factorial of negative numbers.
