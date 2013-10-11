@@ -18,7 +18,6 @@ void Simulation::SimulationStats::onCellNew(Cell::Ptr _cell) {
       if (i==0)  incNumLiveHelperCells();
       strength.valueIs(0);
     } else {
-      cout << "cell type did not exist:" << _cell->cellType() << endl;
       throw "Cell type does not exist";
     }
 
@@ -187,19 +186,7 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   Tissue::Ptr tissue = (*it);
 
   Cell::Ptr cell = tissue->cell(_loc);
-  if (!cell.ptr() || !InfectedCellIs(_tissueName, cell, _side, _strength)) {
-    if (!cell.ptr()) {
-      cout << "cell null:" << 
-             _loc.x << " " <<
-             _loc.y << " " <<
-             _loc.z << endl;  
-    } else {
-      cout << "cell infected:" << 
-             _loc.x << " " <<
-             _loc.y << " " <<
-             _loc.z << endl;  
-    }
-    
+  if (!cell.ptr() || !InfectedCellIs(_tissueName, cell, _side, _strength)) {    
     return;
   }
   currFringe->push(cell);
@@ -251,7 +238,6 @@ void Simulation::CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
 
   Cell::PtrConst cell = (*it)->cell(_loc);
   if (!cell) {
-    cout <<"Cell to clone is null." << endl;
     throw "Null cell exception";
     return;
   }
@@ -331,10 +317,6 @@ std::vector<Tissue::Ptr>::iterator Simulation::GetTissue(
 void Simulation::CheckTissue(
     const std::vector<Tissue::Ptr>::iterator it) {
   if (it == tissues_.end()) {
-    // TODO(rhau) add some additional checks and validation
-    printf("Tissue did not exist.\n");
-    // TODO(rhau) change the asserts to throw exceptions instead
-    assert(it != tissues_.end());
     throw "Tissue did not exist exception";
     return;
   }

@@ -66,7 +66,6 @@ void executeTissueCommand(std::istringstream& iss, Simulation& simulation) {
       simulation.CloneCells(tissue_name, extractSide(side_str));
       return;
     } catch (...) {
-      cout << "caught clone cells exception" << endl;
       return;
     }
   }
