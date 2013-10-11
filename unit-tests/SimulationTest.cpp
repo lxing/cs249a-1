@@ -1,7 +1,8 @@
 #include "gtest/gtest.h"
 #include "../Simulation.h"
 
-#define TISSUE_NAME "Tissue1"
+#define TISSUE "Tissue1"
+#define MULTI "Tissue2"
 #define SIDE_MIN 0
 #define SIDE_MAX 6
 
@@ -22,17 +23,16 @@ Cell::Coordinates Loc(int x, int y, int z) {
 class SimulationTest : public ::testing::Test {
 protected:
   virtual void SetUp() {
-    simpleSim.tissueIs(TISSUE_NAME);
-    simpleSim.cellIs(TISSUE_NAME, Cell::cytotoxicCell_, Loc(0,0,0));
+    sim.tissueIs(TISSUE);
+    sim.cellIs(TISSUE, Cell::cytotoxicCell_, Loc(0,0,0));
 
-    multiSim.tissueIs(TISSUE_NAME);
-    multiSim.cellIs(TISSUE_NAME, Cell::cytotoxicCell_, Loc(0,0,0));
-    multiSim.cellIs(TISSUE_NAME, Cell::cytotoxicCell_, Loc(1,0,0));
-    multiSim.cellIs(TISSUE_NAME, Cell::helperCell_, Loc(0,1,0));
+    sim.tissueIs(MULTI);
+    sim.cellIs(MULTI, Cell::cytotoxicCell_, Loc(0,0,0));
+    sim.cellIs(MULTI, Cell::cytotoxicCell_, Loc(1,0,0));
+    sim.cellIs(MULTI, Cell::helperCell_, Loc(0,1,0));
   }
 
-  Simulation simpleSim;
-  Simulation multiSim;
+  Simulation sim;
 };
 
 /*********/
@@ -40,13 +40,13 @@ protected:
 /*********/
 
 TEST_F(SimulationTest, TissueIs) {
-  Tissue::Ptr tissue = simpleSim.tissue(TISSUE_NAME);
+  Tissue::Ptr tissue = sim.tissue(TISSUE);
   ASSERT_TRUE(tissue.ptr());
-  ASSERT_EQ(strcmp(tissue->name().c_str(), TISSUE_NAME), 0);
+  ASSERT_EQ(strcmp(tissue->name().c_str(), TISSUE), 0);
 }
 
 TEST_F(SimulationTest, CellIs) {
-  Cell::Ptr cell = simpleSim.tissue(TISSUE_NAME)->cell(Loc(0,0,0));
+  Cell::Ptr cell = sim.tissue(TISSUE)->cell(Loc(0,0,0));
   ASSERT_TRUE(cell.ptr());
   ASSERT_EQ(cell->cellType(), Cell::cytotoxicCell_);
 
@@ -61,26 +61,26 @@ TEST_F(SimulationTest, CellIs) {
 
 TEST_F(SimulationTest, AntibodyStrengthIs) { 
   AntibodyStrength strength(50);
-  simpleSim.antibodyStrengthIs(TISSUE_NAME, Loc(0,0,0), CellMembrane::north_, strength);
-  Cell::Ptr cell = simpleSim.tissue(TISSUE_NAME)->cell(Loc(0,0,0));
+  sim.antibodyStrengthIs(TISSUE, Loc(0,0,0), CellMembrane::north_, strength);
+  Cell::Ptr cell = sim.tissue(TISSUE)->cell(Loc(0,0,0));
   ASSERT_EQ(cell->membrane(CellMembrane::north_)->antibodyStrength(), strength);
 }
 
 TEST_F(SimulationTest, ClonedCellIs) {
-  // Tweak an antibody strength to make sure it's copied
-  Tissue::Ptr tissue = simpleSim.tissue(TISSUE_NAME);
+  // Tweak antibody strength to make sure it's copied
+  Tissue::Ptr tissue = sim.tissue(TISSUE);
   AntibodyStrength strength(50);
-  simpleSim.antibodyStrengthIs(TISSUE_NAME, Loc(0,0,0), CellMembrane::north_, strength);
+  sim.antibodyStrengthIs(TISSUE, Loc(0,0,0), CellMembrane::north_, strength);
 
-  simpleSim.clonedCellIs(TISSUE_NAME, Loc(0,0,0), CellMembrane::south_);
+  sim.clonedCellIs(TISSUE, Loc(0,0,0), CellMembrane::south_);
   Cell::Ptr clonedCell = tissue->cell(Loc(0,-1,0));
   ASSERT_TRUE(clonedCell.ptr());
   ASSERT_EQ(clonedCell->membrane(CellMembrane::north_)->antibodyStrength(), strength);
 
   // Should throw exception on existing cell
-  tissue = multiSim.tissue(TISSUE_NAME);
+  tissue = sim.tissue(MULTI);
   try {
-    multiSim.clonedCellIs(TISSUE_NAME, Loc(0,0,0), CellMembrane::north_);
+    sim.clonedCellIs(MULTI, Loc(0,0,0), CellMembrane::north_);
     ASSERT_TRUE(false);
   } catch (...) {
     // Existing cell should not be overwritten
@@ -89,23 +89,25 @@ TEST_F(SimulationTest, ClonedCellIs) {
 }
 
 TEST_F(SimulationTest, ClonedCellsAre) {
-  Tissue::Ptr tissue = multiSim.tissue(TISSUE_NAME);   
-  multiSim.clonedCellsAre(TISSUE_NAME, CellMembrane::north_);
+  Tissue::Ptr tissue = sim.tissue(MULTI);   
+  sim.clonedCellsAre(MULTI, CellMembrane::north_);
   ASSERT_TRUE(tissue->cell(Loc(1,1,0)).ptr());
   ASSERT_EQ(tissue->cell(Loc(0,1,0))->cellType(), Cell::helperCell_); 
 }
 
+TEST_F(SimulationTest, InfectionDel) {
+  Tissue::Ptr tissue = sim.tissue(MULTI);  
+}
+
 TEST_F(SimulationTest, CellCounts) {
-  Stats::Ptr stats = multiSim.stats(TISSUE_NAME);
+  Stats::Ptr stats = sim.stats(MULTI);
   ASSERT_EQ(stats->infected(), 0);
   ASSERT_EQ(stats->cytotoxicCount(), 2);
   ASSERT_EQ(stats->helperCount(), 1);
 
   /* Test counts after clone */
-  multiSim.clonedCellsAre(TISSUE_NAME, CellMembrane::east_);
+  sim.clonedCellsAre(MULTI, CellMembrane::east_);
   ASSERT_EQ(stats->cytotoxicCount(), 3);
   ASSERT_EQ(stats->helperCount(), 2);
 }
 
-TEST_F(SimulationTest, InfectionDel) {
-}
