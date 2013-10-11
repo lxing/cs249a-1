@@ -50,13 +50,13 @@ public:
                             (max_.z - min_.z + 1); };
       void emptyIs(bool _empty) { empty_ = _empty; };
       void limitIs(Cell::Ptr _cell);
+      BoundingBox() : empty_(true) {};
 
     protected:
       Cell::Coordinates max_;
       Cell::Coordinates min_;
       bool empty_;
     };
-    
 
     int infected() { return infected_; };
     int attempts() { return attempts_; };
