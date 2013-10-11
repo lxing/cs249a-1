@@ -102,17 +102,17 @@ class Simulation {
     U64 longestInfectionPathLength_;
   };
 
-  void TissueIs (const Fwk::String _name);
-  void CellIs (Fwk::String _tissueName, Cell::CellType _type,
+  virtual void TissueIs (const Fwk::String _name);
+  virtual void CellIs (Fwk::String _tissueName, Cell::CellType _type,
       Cell::Coordinates _loc);
-  void InfectionIs (Fwk::String _tissueName, Cell::Coordinates _loc,
+  virtual void InfectionIs (Fwk::String _tissueName, Cell::Coordinates _loc,
       CellMembrane::Side _side, AntibodyStrength _strength);
-  void InfectedCellsDel (Fwk::String _tissueName);
+  virtual void InfectedCellsDel (Fwk::String _tissueName);
 
-  void CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
+  virtual void CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
       CellMembrane::Side _side);
-  void CloneCells (Fwk::String _tissueName, CellMembrane::Side _side);
-  void AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
+  virtual void CloneCells (Fwk::String _tissueName, CellMembrane::Side _side);
+  virtual void AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
       CellMembrane::Side _side, AntibodyStrength _strength);
 
  protected:
