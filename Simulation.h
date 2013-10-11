@@ -2,6 +2,7 @@
 #define SIMULATION_H
 
 #include <cmath>
+#include <map>
 #include <vector>
 
 #include "fwk/Ptr.h"
@@ -15,46 +16,82 @@ class Simulation {
   Simulation();
   virtual ~Simulation();
 
-  class TissueReactor : public Tissue::Notifiee {
+  class SimulationStats : public Tissue::Notifiee {
    public:
+    class InfectionSpread {
+     public:
+      enum SpreadState {
+        empty_ = 0,
+        not_empty_ = 1
+      };
+
+      InfectionSpread();
+      ~InfectionSpread() {}
+      
+      void ResetSpread();
+      void UpdateSpread(Cell::Coordinates _loc);
+      U64 GetInfectionSpread();
+
+     private:
+      SpreadState state_;
+
+      Cell::Coordinates root_loc_;
+      Cell::Coordinates north_loc_;
+      Cell::Coordinates south_loc_;
+      Cell::Coordinates east_loc_;
+      Cell::Coordinates west_loc_;
+      Cell::Coordinates top_loc_;
+      Cell::Coordinates bottom_loc_;
+    };
+
+    ~SimulationStats() {
+      free(tissue_);
+    }
+
+    // Tissue::Notifiee Methods
     void onCellNew(Cell::Ptr _cell);
-
-    static TissueReactor* TissueReactorIs(Tissue* t, Simulation* s) {
-      TissueReactor* tr = new TissueReactor(t, s);
-      return tr;
+    static SimulationStats* SimulationStatsIs(Tissue* t) {
+      SimulationStats* stats = new SimulationStats(t);
+      return stats;
     }
 
-   protected:
-    TissueReactor(Tissue* t, Simulation* s) : Tissue::Notifiee(), owner_(s) {
-      notifierIs(t);
-    }
+    void onCellDel(Cell::Ptr _cell);
 
-   private:
-    Simulation* owner_;
-  };
-
-  class SimulationStats {
-   public:
-    SimulationStats();
-    ~SimulationStats() {};
-    void Reset();
+    void ResetInfectionStats();
+    void ResetSpreadStats();
     void incNumInfectedCells() { ++numInfectedCells_; }
+    void decNumInfectedCells() { --numInfectedCells_; }
     void incNumInfectionAttempts() { ++numInfectionAttempts_; }
     void incTotalDiseaseAndAntibodyStrengthDiff(int diff) { 
       totalDiseaseAndAntibodyStrengthDiff_ += diff;
     }
     void incNumLiveCytotoxicCells() { ++numLiveCytotoxicCells_; }
+    void decNumLiveCytotoxicCells() { --numLiveCytotoxicCells_; }
     void incNumLiveHelperCells() { ++numLiveHelperCells_; }
+    void decNumLiveHelperCells() { --numLiveHelperCells_; }
     void incLongestInfectionPathLength() { ++longestInfectionPathLength_; }
 
-    void RootLocIs(Cell::Coordinates _root_loc);
+    // void RootLocIs(Cell::Coordinates _root_loc);
 
     void UpdateSpread(Cell::Coordinates _loc);
-    void UpdatePathLength(Cell::Coordinates _loc);
+    // void UpdatePathLength(Cell::Coordinates _loc);
     string ToString();
+
+   protected:
+    SimulationStats(Tissue* t) : 
+        Tissue::Notifiee(), tissue_(t),
+        numInfectedCells_(0), numInfectionAttempts_(0),
+        totalDiseaseAndAntibodyStrengthDiff_(0),
+        numLiveCytotoxicCells_(0), numLiveHelperCells_(0),
+        infectionSpread_(0), longestInfectionPathLength_(0) {
+      notifierIs(t);
+    }
 
    private:
     void CalculateInfectionSpread();
+
+    Tissue* tissue_;
+    InfectionSpread spread_;
 
     U64 numInfectedCells_;
     U32 numInfectionAttempts_;
@@ -63,20 +100,6 @@ class Simulation {
     U64 numLiveHelperCells_;
     U64 infectionSpread_;
     U64 longestInfectionPathLength_;
-
-    Cell::Coordinates root_loc_;
-    Cell::Coordinates north_loc_;
-    Cell::Coordinates south_loc_;
-    Cell::Coordinates east_loc_;
-    Cell::Coordinates west_loc_;
-    Cell::Coordinates top_loc_;
-    Cell::Coordinates bottom_loc_;
-  };
-
-  class PathTracker{
-    
-    Cell::Ptr next_cell;
-    U32 path_length;
   };
 
   void TissueIs (const Fwk::String _name);
@@ -92,8 +115,8 @@ class Simulation {
   void AntibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
       CellMembrane::Side _side, AntibodyStrength _strength);
 
-  void incNumLiveCytotoxicCells() { stats_.incNumLiveCytotoxicCells(); }
-  void incNumLiveHelperCells() { stats_.incNumLiveHelperCells(); }
+  // void incNumLiveCytotoxicCells() { stats_.incNumLiveCytotoxicCells(); }
+  // void incNumLiveHelperCells() { stats_.incNumLiveHelperCells(); }
 
 
  protected:
@@ -101,14 +124,14 @@ class Simulation {
   vector<Tissue*> tissue_ptrs_;
 
  private:
-  bool InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
+  bool InfectedCellIs(Fwk::String _tissueName, Cell::Ptr _cell, CellMembrane::Side _side, 
       AntibodyStrength _strength);
   std::vector<Tissue::Ptr>::iterator GetTissue (const Fwk::String _name);
   void CheckTissue (const std::vector<Tissue::Ptr>::iterator it);
   Cell::Coordinates GetCellLocation(Cell::Coordinates _loc, CellMembrane::Side _side);
   CellMembrane::Side oppositeSide(CellMembrane::Side side);
 
-  SimulationStats stats_;
+  std::map<string, SimulationStats*> stats_map_;
 };
 
 #endif

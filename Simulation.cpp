@@ -7,15 +7,15 @@
 
 #define kMembraneName "Membrane"
 
-void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
+void Simulation::SimulationStats::onCellNew(Cell::Ptr _cell) {
   for (int i=0; i<6; i++) {
     CellMembrane::Side side = static_cast<CellMembrane::Side>(i);
     AntibodyStrength strength(0);
     if (_cell->cellType() == Cell::cytotoxicCell_) {
-      if (i==0) owner_->incNumLiveCytotoxicCells();
+      if (i==0) incNumLiveCytotoxicCells();
       strength.valueIs(100);
     } else if (_cell->cellType() == Cell::helperCell_) {
-      if (i==0)  owner_->incNumLiveHelperCells();
+      if (i==0)  incNumLiveHelperCells();
       strength.valueIs(0);
     } else {
       printf("cell type did not exist\n");
@@ -29,19 +29,30 @@ void Simulation::TissueReactor::onCellNew(Cell::Ptr _cell) {
   }
 }
 
-Simulation::SimulationStats::SimulationStats() : 
-    numInfectedCells_(0), numInfectionAttempts_(0),
-    totalDiseaseAndAntibodyStrengthDiff_(0),
-    numLiveCytotoxicCells_(0), numLiveHelperCells_(0),
-    infectionSpread_(0), longestInfectionPathLength_(0) {
+void Simulation::SimulationStats::onCellDel(Cell::Ptr _cell) {
+  if (_cell->cellType() == Cell::helperCell_) {
+    decNumLiveHelperCells();
+    if (_cell->health() == Cell::infected_) {
+      decNumInfectedCells();
+    }
+  }
+
+  if (_cell->cellType() == Cell::cytotoxicCell_) {
+    decNumLiveCytotoxicCells();
+    if (_cell->health() == Cell::infected_) {
+      decNumInfectedCells();
+    }
+  }
 }
 
-void Simulation::SimulationStats::Reset() {
-  // numInfectedCells_ = 0;
+void Simulation::SimulationStats::ResetInfectionStats() {
   numInfectionAttempts_ = 0;
   totalDiseaseAndAntibodyStrengthDiff_ = 0;
-  // infectionSpread_ = 0;
   longestInfectionPathLength_ = 0;
+}
+
+void Simulation::SimulationStats::ResetSpreadStats() {
+  spread_.ResetSpread();
 }
 
 string Simulation::SimulationStats::ToString() {
@@ -59,39 +70,74 @@ string Simulation::SimulationStats::ToString() {
   return ss.str();
 }
 
-void Simulation::SimulationStats::RootLocIs(Cell::Coordinates _root_loc) {
-  root_loc_ = _root_loc;
-  north_loc_ = _root_loc;
-  south_loc_ = _root_loc;
-  east_loc_ = _root_loc;
-  west_loc_ = _root_loc;
-  top_loc_ = _root_loc;
-  bottom_loc_ = _root_loc;
+Simulation::SimulationStats::InfectionSpread::InfectionSpread() {
+  state_ = empty_;
 }
 
-void Simulation::SimulationStats::UpdateSpread(Cell::Coordinates _loc) {
-  if (_loc.y > north_loc_.y) north_loc_ = _loc;
-  if (_loc.y < south_loc_.y) south_loc_ = _loc;
-
-  if (_loc.x > east_loc_.x) east_loc_ = _loc;
-  if (_loc.x < west_loc_.x) west_loc_ = _loc;
-
-  if (_loc.y > top_loc_.z) top_loc_ = _loc;
-  if (_loc.y < north_loc_.z) bottom_loc_ = _loc;
+void Simulation::SimulationStats::InfectionSpread::ResetSpread() {
+  state_ = empty_;
 }
 
-void Simulation::SimulationStats::UpdatePathLength(Cell::Coordinates _loc) {
-  U64 distance = abs(_loc.x - root_loc_.x)
-    + abs(_loc.y - root_loc_.y)
-    + abs(_loc.z - root_loc_.z);
-  longestInfectionPathLength_ = distance;
+void Simulation::SimulationStats::InfectionSpread::UpdateSpread(
+    Cell::Coordinates _loc) {
+  if (state_ == empty_) {
+    north_loc_ = _loc;
+    south_loc_ = _loc;
+    east_loc_ = _loc;
+    west_loc_ = _loc;
+    top_loc_ = _loc;
+    bottom_loc_ = _loc;
+
+    state_ = not_empty_;  
+  } 
+
+  if (state_ == not_empty_) {
+    if (_loc.y > north_loc_.y) north_loc_ = _loc;
+    if (_loc.y < south_loc_.y) south_loc_ = _loc;
+
+    if (_loc.x > east_loc_.x) east_loc_ = _loc;
+    if (_loc.x < west_loc_.x) west_loc_ = _loc;
+
+    if (_loc.z > top_loc_.z) top_loc_ = _loc;
+    if (_loc.z < bottom_loc_.z) bottom_loc_ = _loc;  
+  }
 }
 
-void Simulation::SimulationStats::CalculateInfectionSpread() {
+U64 Simulation::SimulationStats::InfectionSpread::GetInfectionSpread() {
+  if (state_ == empty_) return 0;
+
   U64 height = abs(north_loc_.y - south_loc_.y) + 1;
   U64 width = abs(east_loc_.x - west_loc_.x) + 1;
   U64 depth = abs(top_loc_.z - bottom_loc_.z) + 1;
-  infectionSpread_ = height * width * depth;
+  return (height * width * depth);
+}
+
+// void Simulation::SimulationStats::RootLocIs(Cell::Coordinates _root_loc) {
+//   root_loc_ = _root_loc;
+//   north_loc_ = _root_loc;
+//   south_loc_ = _root_loc;
+//   east_loc_ = _root_loc;
+//   west_loc_ = _root_loc;
+//   top_loc_ = _root_loc;
+//   bottom_loc_ = _root_loc;
+// }
+
+void Simulation::SimulationStats::UpdateSpread(Cell::Coordinates _loc) {
+  spread_.UpdateSpread(_loc);
+}
+
+// void Simulation::SimulationStats::UpdatePathLength(Cell::Coordinates _loc) {
+//   U64 distance = abs(_loc.x - root_loc_.x)
+//     + abs(_loc.y - root_loc_.y)
+//     + abs(_loc.z - root_loc_.z);
+//   longestInfectionPathLength_ = distance;
+// }
+
+void Simulation::SimulationStats::CalculateInfectionSpread() {
+  // U64 height = abs(north_loc_.y - south_loc_.y) + 1;
+  // U64 width = abs(east_loc_.x - west_loc_.x) + 1;
+  // U64 depth = abs(top_loc_.z - bottom_loc_.z) + 1;
+  infectionSpread_ = spread_.GetInfectionSpread();
 }
 
 Simulation::Simulation() {
@@ -100,6 +146,7 @@ Simulation::Simulation() {
 
 Simulation::~Simulation() {
   // TODO(rhau) fill in
+  // TODO(rhau) free the stats pointers in an iterator
 }
 
 void Simulation::TissueIs (const Fwk::String _name) {
@@ -107,7 +154,9 @@ void Simulation::TissueIs (const Fwk::String _name) {
   if (it != tissues_.end()) return;
 
   Tissue::Ptr tissue(Tissue::TissueNew(_name));
-  TissueReactor *m = TissueReactor::TissueReactorIs(tissue.ptr(), this);
+
+  SimulationStats* stats = SimulationStats::SimulationStatsIs(tissue.ptr());
+  stats_map_.insert(std::pair<string, SimulationStats*>(_name, stats));
   tissues_.push_back(tissue);
   tissue_ptrs_.push_back(tissue.ptr());
 }
@@ -123,8 +172,8 @@ void Simulation::CellIs (Fwk::String _tissueName, Cell::CellType _type,
 }
 
 
-bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side, 
-                                AntibodyStrength _strength) {
+bool Simulation::InfectedCellIs(Fwk::String _tissueName, 
+    Cell::Ptr _cell, CellMembrane::Side _side, AntibodyStrength _strength) {
   if (_cell->health() == _cell->infected()) {
     // TODO check if infection attempt includes an already infected cell
     return true;
@@ -132,24 +181,24 @@ bool Simulation::InfectedCellIs(Cell::Ptr _cell, CellMembrane::Side _side,
 
   CellMembrane::Ptr membrane = _cell->membrane(_side);
   
-  stats_.incTotalDiseaseAndAntibodyStrengthDiff(
+  stats_map_[_tissueName]->incTotalDiseaseAndAntibodyStrengthDiff(
       (int)_strength.value() - (int)membrane->antibodyStrength().value());
-  stats_.incNumInfectionAttempts();
+  stats_map_[_tissueName]->incNumInfectionAttempts();
 
   if (_strength <= membrane->antibodyStrength()) {
     return false; 
   }
   _cell->healthIs(_cell->infected());
 
-  stats_.incNumInfectedCells();
-  stats_.UpdateSpread(_cell->location());
-  stats_.UpdatePathLength(_cell->location());
+  stats_map_[_tissueName]->incNumInfectedCells();
+  stats_map_[_tissueName]->UpdateSpread(_cell->location());
+  // stats_map_[_tissueName]->UpdatePathLength(_cell->location());
   return true;
 }
 
 void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
     CellMembrane::Side _side, AntibodyStrength _strength) {
-  stats_.RootLocIs(_loc);
+  // stats_map_[_tissueName]->RootLocIs(_loc);
   
   std::queue<Cell::Ptr> infectionFringe1;
   std::queue<Cell::Ptr> infectionFringe2;
@@ -161,7 +210,7 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   Tissue::Ptr tissue = (*it);
 
   Cell::Ptr cell = tissue->cell(_loc);
-  if (!cell.ptr() || !InfectedCellIs(cell, _side, _strength)) {
+  if (!cell.ptr() || !InfectedCellIs(_tissueName, cell, _side, _strength)) {
     if (!cell.ptr()) {
       cout << "cell null:" << 
              _loc.x << " " <<
@@ -179,7 +228,7 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   currFringe->push(cell);
 
   while (!(currFringe->empty() && nextFringe->empty())) {
-    stats_.incLongestInfectionPathLength();
+    stats_map_[_tissueName]->incLongestInfectionPathLength();
     while (!currFringe->empty()) {
       cell = currFringe->front(); 
 
@@ -189,7 +238,7 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
         Cell::Ptr next_cell = tissue->cell(next_loc);
         if (next_cell.ptr() != NULL &&
             next_cell->health() != Cell::infected_ &&
-            InfectedCellIs(next_cell, oppositeSide(side), _strength)) {
+            InfectedCellIs(_tissueName, next_cell, oppositeSide(side), _strength)) {
           nextFringe->push(next_cell);
         }
       }
@@ -200,8 +249,8 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   }
 
   // print out stats after each round
-  cout << stats_.ToString() << endl;
-  stats_.Reset();
+  cout << stats_map_[_tissueName]->ToString() << endl;
+  stats_map_[_tissueName]->ResetInfectionStats();
 }
 
 void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
@@ -219,6 +268,7 @@ void Simulation::InfectedCellsDel(Fwk::String _tissueName) {
       (*it)->cellDel((*cell_iter)->location().name());  
     }
   }
+  stats_map_[_tissueName]->ResetSpreadStats();
 }
 
 
@@ -263,7 +313,7 @@ void Simulation::CloneCell (Fwk::String _tissueName, Cell::Coordinates _loc,
   // update cell health status
   cloned_cell->healthIs(cell->health());
   if (cloned_cell->health() == Cell::infected_) {
-    stats_.incNumInfectedCells();
+    stats_map_[_tissueName]->incNumInfectedCells();
   }
 }
 
@@ -279,7 +329,7 @@ void Simulation::CloneCells (Fwk::String _tissueName, CellMembrane::Side _side) 
   }
 
   // cout << "beginning clone cells" << _side << endl;
-  for (int i=0; i<clone_locations.size(); ++i) {
+  for (int i=0; i<(int)clone_locations.size(); ++i) {
     Cell::Coordinates coord = clone_locations[i];
     // cout << "cloning loc:"
     //      << coord.x << " "
