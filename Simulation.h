@@ -45,20 +45,16 @@ public:
 
     class BoundingBox {
     public:
-      int spread() { return (max_.x - min_.x) * (max_.y - min_.y) * (max_.z - min_.z); };
+      int spread() { return (max_.x - min_.x + 1) *
+                            (max_.y - min_.y + 1) *
+                            (max_.z - min_.z + 1); };
+      void emptyIs(bool _empty) { empty_ = _empty; };
       void limitIs(Cell::Ptr _cell);
-      BoundingBox() {
-        max_.x = 0; // 1 + the actual maximum coordinate
-        max_.y = 0;
-        max_.z = 0;
-        min_.x = 0; // the actual min_imum coordinate
-        min_.y = 0;
-        min_.z = 0;
-      };
 
     protected:
       Cell::Coordinates max_;
       Cell::Coordinates min_;
+      bool empty_;
     };
     
 
@@ -67,7 +63,7 @@ public:
     int strengthDiff() { return strengthDiff_; };
     int cytotoxicCount() { return cytotoxicCount_; };
     int helperCount() { return helperCount_; };
-    int spread() { return 0; };
+    int spread() { return boundingBox_.spread(); };
     int pathLength() { return pathLength_; };
     void attemptsIs(int _attempts) { attempts_ = _attempts; };
     void strengthDiffIs(int _strengthDiff) { strengthDiff_ = _strengthDiff; };

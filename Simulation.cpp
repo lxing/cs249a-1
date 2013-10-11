@@ -17,6 +17,7 @@ Simulation::~Simulation() {}
 void Simulation::tissueIs(Fwk::String _tissueName) {
   Tissue::Ptr tissue = Simulation::tissue(_tissueName);
   if (tissue.ptr()) return;
+
   Tissue::Ptr newTissue(Tissue::TissueNew(_tissueName));   
   tissues_.push_back(newTissue); 
 
@@ -115,12 +116,18 @@ void Simulation::clonedCellIs(Fwk::String _tissueName, Cell::Coordinates _loc,
   Cell::Coordinates newLoc = translatedLoc(_loc, _side);
   cellIs(_tissueName, cell->cellType(), newLoc);
 
-  // Copy over antibody strengths
+  // Copy over antibody strengths and infected status
   Cell::Ptr newCell = tissue->cell(newLoc);
   for (int i = SIDE_MIN; i < SIDE_MAX; i++) {
     CellMembrane::Side side = (CellMembrane::Side) i;
     newCell->membrane(side)->antibodyStrengthIs(
       cell->membrane(side)->antibodyStrength());
+  }
+
+  if (cell->health() == Cell::infected_) {
+    newCell->healthIs(Cell::infected_);
+    Stats::Ptr stats = Simulation::stats(_tissueName);
+    stats->onCellInfected(newCell);
   }
 }
 
@@ -142,8 +149,8 @@ void Simulation::clonedCellsAre(Fwk::String _tissueName, CellMembrane::Side _sid
   }
 }
 
-void Simulation::antibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates _loc,
-                                     CellMembrane::Side _side, AntibodyStrength _strength) {
+void Simulation::antibodyStrengthIs(Fwk::String _tissueName, Cell::Coordinates _loc,
+                                    CellMembrane::Side _side, AntibodyStrength _strength) {
   Tissue::Ptr tissue = Simulation::tissue(_tissueName);
   if (!tissue.ptr()) return;
   Cell::Ptr cell = tissue->cell(_loc);
@@ -154,9 +161,9 @@ void Simulation::antibodyStrengthIs (Fwk::String _tissueName, Cell::Coordinates 
 }
 
 
-/*********/
-/* Stats */
-/*********/
+/**************/
+/* Stats Impl */
+/**************/
 
 void Simulation::Stats::onCellNew(Cell::Ptr _cell) {
   AntibodyStrength strength;
@@ -182,6 +189,7 @@ void Simulation::Stats::onCellNew(Cell::Ptr _cell) {
 
 void Simulation::Stats::onCellDel(Cell::Ptr _cell) {
   if (_cell->health() == Cell::infected_) infected_ -= 1;
+
   switch (_cell->cellType()) {
     case Cell::cytotoxicCell_ :
       cytotoxicCount_--;
@@ -191,6 +199,9 @@ void Simulation::Stats::onCellDel(Cell::Ptr _cell) {
       break;
     default : throw std::runtime_error("Invalid cell type");
   }
+
+  // Assume that all cells will be deleted, resetting the bounding box
+  boundingBox_.emptyIs(true);
 }
 
 void Simulation::Stats::onCellInfected(Cell::Ptr _cell) {
@@ -205,24 +216,25 @@ void Simulation::Stats::onInfectionAttempt(Cell::Ptr _cell, int _strengthDiff) {
 
 Fwk::String Simulation::Stats::output() {
   std::stringstream ss;
-  ss << infected_ << " ";
-  ss << attempts_ << " ";
-  ss << strengthDiff_ << " ";
-  ss << cytotoxicCount_ << " ";
-  ss << helperCount_ << " ";
-  ss << boundingBox_.spread()  << " ";
-  ss << pathLength_ << " ";
+  ss << infected() << " ";
+  ss << attempts() << " ";
+  ss << strengthDiff() << " ";
+  ss << cytotoxicCount() << " ";
+  ss << helperCount() << " ";
+  ss << spread()  << " ";
+  ss << pathLength() << " ";
   return ss.str();
 }
 
 void Simulation::Stats::BoundingBox::limitIs(Cell::Ptr _cell) {
   Cell::Coordinates loc = _cell->location(); 
-  if (loc.x + 1 > max_.x) max_.x = loc.x + 1;
-  if (loc.y + 1 > max_.y) max_.y = loc.y + 1;
-  if (loc.y + 1 > max_.z) max_.z = loc.z + 1;
-  if (loc.y + 1 <  min_.x) min_.x = loc.x;
-  if (loc.y + 1 <  min_.y) min_.y = loc.y;
-  if (loc.y + 1 <  min_.z) min_.z = loc.z;
+  if (empty_ || (loc.x > max_.x)) max_.x = loc.x;
+  if (empty_ || (loc.y > max_.y)) max_.y = loc.y;
+  if (empty_ || (loc.z > max_.z)) max_.z = loc.z;
+  if (empty_ || (loc.x < min_.x)) min_.x = loc.x;
+  if (empty_ || (loc.y < min_.y)) min_.y = loc.y;
+  if (empty_ || (loc.z < min_.z)) min_.z = loc.z;
+  empty_ = false;
 }
 
 /**********************/
@@ -234,8 +246,9 @@ Tissue::Ptr Simulation::tissue(Fwk::String _tissueName) {
   for (TissueList::iterator it = tissues_.begin(); it != tissues_.end(); ++it) {
     tissue = *it;
     if (!strcmp(tissue->name().c_str(), _tissueName.c_str()))
-      break;
+      return tissue;
   }
+  tissue = NULL;
   return tissue;
 }
 
@@ -244,8 +257,9 @@ Simulation::Stats::Ptr Simulation::stats(Fwk::String _tissueName) {
   for (StatsList::iterator it = statuses_.begin(); it != statuses_.end(); ++it) {
     stats = *it;
     if (!strcmp(stats->name().c_str(), _tissueName.c_str()))
-      break;
+      return stats;
   }
+  stats = NULL;
   return stats;
 }
 
