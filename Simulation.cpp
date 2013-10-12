@@ -213,10 +213,6 @@ void Simulation::InfectionIs(Fwk::String _tissueName, Cell::Coordinates _loc,
       }
       currFringe->pop();
     }
-    // cout << nextFringe->size() << endl;
-    if (nextFringe->size() > 0) {
-      // stats_map_[_tissueName]->incLongestInfectionPathLength();  
-    }
     
     swap(*currFringe, *nextFringe);
   }
@@ -366,10 +362,10 @@ CellMembrane::Side Simulation::oppositeSide(CellMembrane::Side side) {
     return CellMembrane::east_;
   }
   if (side == CellMembrane::up_) {
-    return CellMembrane::up_;
+    return CellMembrane::down_;
   }
   if (side == CellMembrane::down_) {
-    return CellMembrane::down_;
+    return CellMembrane::up_;
   }
 
   throw "side not found exception";

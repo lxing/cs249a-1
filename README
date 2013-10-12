@@ -26,3 +26,4 @@ Eclipse + GCC:
 Makefile:
 	Run 'make' in the top-level directory.
 
+user: rhau
